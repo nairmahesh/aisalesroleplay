@@ -199,29 +199,31 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
       {/* Left Side - Video/Audio Player and Transcript */}
       <div className="flex-1 flex flex-col border-r border-slate-200">
         {/* Header */}
-        <div className="p-6 border-b border-slate-200">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back
-          </button>
-
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Call with {analyticsData.caller}
-          </h1>
-          <div className="flex items-center gap-4 text-sm text-slate-600">
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              {analyticsData.participants} Participants
-            </div>
-            <div>{analyticsData.date}</div>
-            <div>{analyticsData.duration}</div>
-            <div className="ml-auto">
-              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-                Score: {detailedTotalScore}/{detailedMaxScore}
-              </span>
+        <div className="p-6 border-b border-slate-200 bg-slate-50">
+          <div className="flex items-start gap-4 mb-6">
+            <button
+              onClick={onBack}
+              className="flex-shrink-0 p-2 -ml-2 -mt-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-8 h-8 stroke-[3]" />
+            </button>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-slate-900 mb-3">
+                Call with {bot.name}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-slate-600">
+                <div className="flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  {analyticsData.participants} Participants
+                </div>
+                <div>{analyticsData.date}</div>
+                <div>{analyticsData.duration}</div>
+                <div className="ml-auto">
+                  <span className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-semibold">
+                    Score: {detailedTotalScore}/{detailedMaxScore}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
