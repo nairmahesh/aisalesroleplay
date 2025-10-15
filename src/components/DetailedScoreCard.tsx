@@ -16,6 +16,9 @@ export interface CallScore {
   score: number;
   passed: boolean;
   feedback: string;
+  transcript_evidence?: string;
+  timestamp?: string;
+  improvement_examples?: string[];
 }
 
 interface DetailedScoreCardProps {
@@ -215,6 +218,22 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
             </div>
 
             <div className="p-8 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+              {selectedScore.transcript_evidence && (
+                <div className="bg-slate-50 p-6 rounded-xl border-2 border-slate-300">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
+                      <span className="text-slate-700 font-mono text-sm font-bold">{selectedScore.timestamp || '0:00'}</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-lg font-bold text-slate-900 mb-3">Transcript Evidence</h4>
+                      <div className="bg-white p-4 rounded-lg border border-slate-300 font-mono text-sm text-slate-800 whitespace-pre-wrap">
+                        {selectedScore.transcript_evidence}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className={`p-6 rounded-xl border-2 ${
                 selectedScore.passed
                   ? 'border-green-200 bg-green-50'
@@ -224,7 +243,7 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
                   <AlertCircle className={`w-6 h-6 mt-1 ${
                     selectedScore.passed ? 'text-green-600' : 'text-red-600'
                   }`} />
-                  <div>
+                  <div className="w-full">
                     <h4 className="text-lg font-bold text-slate-900 mb-3">Why were you scored this way?</h4>
                     <div className="text-slate-800 leading-relaxed space-y-3">
                       {selectedScore.feedback.split('\n\n').map((paragraph, idx) => (
@@ -238,9 +257,23 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-200">
                 <div className="flex items-start gap-3">
                   <Lightbulb className="w-6 h-6 text-blue-600 mt-1" />
-                  <div>
+                  <div className="w-full">
                     <h4 className="text-lg font-bold text-slate-900 mb-3">What could you do differently next time?</h4>
-                    {selectedScore.passed ? (
+                    {selectedScore.improvement_examples && selectedScore.improvement_examples.length > 0 ? (
+                      <div className="text-slate-800 leading-relaxed space-y-3">
+                        <p className="font-medium mb-3">The rep could have helped quantify the business impact by:</p>
+                        <ol className="space-y-3">
+                          {selectedScore.improvement_examples.map((example, idx) => (
+                            <li key={idx} className="flex items-start gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">
+                                {idx + 1}
+                              </span>
+                              <span className="flex-1 pt-0.5">{example}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    ) : selectedScore.passed ? (
                       <div className="text-slate-800 leading-relaxed space-y-3">
                         <p className="font-medium">Excellent work on this criteria! Here's how to maintain this standard:</p>
                         <ul className="list-disc list-inside space-y-2 ml-2">
