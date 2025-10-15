@@ -199,6 +199,15 @@ export function HumanToHumanView() {
         </div>
       </div>
 
+      {rooms.length > 0 && rooms[0] && (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <p className="text-xs font-mono text-slate-600">
+            Debug - First room: allow_external={String(rooms[0].allow_external)},
+            token={rooms[0].external_invite_token ? 'exists' : 'null'}
+          </p>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-slate-200 p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -211,6 +220,12 @@ export function HumanToHumanView() {
           />
         </div>
       </div>
+
+      {filteredRooms.length === 0 && (
+        <div className="bg-slate-50 border border-slate-200 rounded-lg p-8 text-center">
+          <p className="text-slate-600">No practice rooms yet. Create one to get started!</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRooms.map((room) => (
