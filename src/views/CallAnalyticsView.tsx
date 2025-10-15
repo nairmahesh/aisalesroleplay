@@ -1,4 +1,4 @@
-import { ArrowLeft, TrendingUp, MessageSquare, Clock, Award, CheckCircle, XCircle, AlertTriangle, Lightbulb, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Users, Award, TrendingUp, MessageCircle, ChevronRight, CheckCircle, XCircle, Play } from 'lucide-react';
 import { Bot } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
@@ -43,13 +43,12 @@ interface TranscriptMessage {
 }
 
 export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewProps) {
+  const [activeTab, setActiveTab] = useState<'participants' | 'scorecard' | 'analytics' | 'feedback' | 'objections'>('scorecard');
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<string | null>(null);
-  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [scoringCriteria, setScoringCriteria] = useState<ScoringCriteria[]>([]);
   const [callScores, setCallScores] = useState<CallScore[]>([]);
   const [detailedTotalScore, setDetailedTotalScore] = useState<number>(0);
   const [detailedMaxScore, setDetailedMaxScore] = useState<number>(100);
-  const [detailedOverallFeedback, setDetailedOverallFeedback] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [highlightedTimestamp, setHighlightedTimestamp] = useState<string | null>(null);
 
@@ -71,23 +70,19 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
 
       const { data: analyticsData } = await supabase
         .from('call_analytics')
-        .select('total_score, max_score, overall_feedback')
+        .select('total_score, max_score')
         .eq('session_id', sessionId)
         .maybeSingle();
 
       if (criteriaData) {
-        console.log('Loaded criteria:', criteriaData.length, 'items');
         setScoringCriteria(criteriaData);
       }
       if (scoresData) {
-        console.log('Loaded scores:', scoresData.length, 'items');
         setCallScores(scoresData);
       }
       if (analyticsData) {
-        console.log('Loaded analytics:', analyticsData);
         setDetailedTotalScore(analyticsData.total_score || 0);
         setDetailedMaxScore(analyticsData.max_score || 100);
-        setDetailedOverallFeedback(analyticsData.overall_feedback || '');
       }
 
       setLoading(false);
@@ -97,55 +92,28 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
     }
   };
 
+  const getScoreForCriteria = (criteriaId: string): CallScore | undefined => {
+    return callScores.find(s => s.criteria_id === criteriaId);
+  };
+
   const analyticsData = {
-    overallScore: 67,
-    framework: 'MEDDIC',
+    caller: 'Marcus Johnson',
+    callType: 'Cold Call',
+    date: '10/15/2025',
+    time: '12:34',
+    participants: 2,
     duration: '12:34',
-    date: new Date().toLocaleDateString(),
-    userTalkPercentage: 45,
-    botTalkPercentage: 55,
-    userSentiment: 0.7,
-    botSentiment: 0.5,
+    framework: 'MEDDIC',
     conversationFlow: [
       { timestamp: '00:00', speaker: 'user', text: 'Hi! Thanks for taking my call today.' },
-      { timestamp: '00:05', speaker: 'bot', text: "Hello! This is Marcus Johnson. Thanks for reaching out. How can I help you today?" },
-      { timestamp: '00:15', speaker: 'user', text: "I wanted to discuss your solutions for our sales team. We're looking to improve our performance tracking." },
-      { timestamp: '00:28', speaker: 'bot', text: "Great! I'd love to learn more about your current challenges. What specific issues are you facing with performance tracking?" },
-      { timestamp: '00:42', speaker: 'user', text: "We're using spreadsheets and it's getting difficult to scale. We have 25 reps and no real-time visibility." },
-      { timestamp: '00:53', speaker: 'bot', text: "We can help you cut manual work by 50%." },
-      { timestamp: '01:15', speaker: 'user', text: "Deal velocity, win rates, and activity tracking are our top priorities. What does your pricing look like?" },
-      { timestamp: '01:32', speaker: 'bot', text: "For a team of 25, we typically see pricing in the $50-75K annual range, depending on features. That includes implementation and training. What's your budget range?" },
-      { timestamp: '01:48', speaker: 'user', text: "That's within our range. We're looking to implement something in Q1 next year." },
-      { timestamp: '02:00', speaker: 'bot', text: "Perfect timing! Q1 gives us enough runway for a smooth implementation. Who else needs to be involved in this decision?" },
-      { timestamp: '02:45', speaker: 'user', text: "I'll check with our CTO." },
-      { timestamp: '03:12', speaker: 'user', text: "Integration with HubSpot is key for us." },
-      { timestamp: '04:00', speaker: 'user', text: "I'll share it internally." },
-    ],
-  };
-
-  const scrollToTranscript = (timestamp: string) => {
-    setHighlightedTimestamp(timestamp);
-
-    const element = document.getElementById(`transcript-${timestamp}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-      setTimeout(() => {
-        setHighlightedTimestamp(null);
-      }, 3000);
-    }
-  };
-
-  const getSentimentLabel = (score: number) => {
-    if (score >= 0.6) return { label: 'Positive', color: 'text-green-600', bg: 'bg-green-100' };
-    if (score >= 0.3) return { label: 'Neutral', color: 'text-slate-600', bg: 'bg-slate-100' };
-    return { label: 'Negative', color: 'text-red-600', bg: 'bg-red-100' };
-  };
-
-  const userSentimentStyle = getSentimentLabel(analyticsData.userSentiment);
-
-  const getScoreForCriteria = (criteriaId: string) => {
-    return callScores.find(s => s.criteria_id === criteriaId);
+      { timestamp: '00:05', speaker: 'bot', text: 'Hello! This is Marcus Johnson. Thanks for reaching out. How can I help you today?' },
+      { timestamp: '00:15', speaker: 'user', text: 'I wanted to discuss your solutions for our sales team. We\'re looking to improve our performance tracking.' },
+      { timestamp: '00:28', speaker: 'bot', text: 'Great! I\'d love to learn more about your current challenges. What specific issues are you facing with performance tracking?' },
+      { timestamp: '00:42', speaker: 'user', text: 'We\'re using spreadsheets and it\'s getting difficult to scale. We have 25 reps and no real-time visibility.' },
+      { timestamp: '00:58', speaker: 'bot', text: 'I understand. So you have 25 reps using spreadsheets for performance tracking. What\'s the biggest pain point you\'re experiencing right now?' },
+      { timestamp: '01:15', speaker: 'user', text: 'The biggest issue is we can\'t see problems until it\'s too late. By the time we review the data, the week is already over.' },
+      { timestamp: '01:32', speaker: 'bot', text: 'That makes sense. Real-time visibility is crucial. Can you tell me more about your current process and how decisions are made?' },
+    ]
   };
 
   const groupedCriteria = scoringCriteria.reduce((acc, criterion) => {
@@ -156,575 +124,412 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
     return acc;
   }, {} as Record<string, ScoringCriteria[]>);
 
-  const categoryOrder = ['opening', 'discovery', 'handling', 'value', 'closing'];
-  const sortedCategories = Object.keys(groupedCriteria).sort((a, b) => {
-    const indexA = categoryOrder.indexOf(a);
-    const indexB = categoryOrder.indexOf(b);
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
-    return indexA - indexB;
-  });
-
-  const getCategoryLabel = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
+  const getCategoryScore = (category: string) => {
+    const criteria = groupedCriteria[category] || [];
+    const scores = criteria.map(c => getScoreForCriteria(c.id));
+    const total = scores.reduce((sum, s) => sum + (s?.score || 0), 0);
+    const max = criteria.reduce((sum, c) => sum + c.max_score, 0);
+    return { total, max };
   };
 
-  const selectedCriteria = selectedCriteriaId ? scoringCriteria.find(c => c.id === selectedCriteriaId) : null;
   const selectedScore = selectedCriteriaId ? getScoreForCriteria(selectedCriteriaId) : null;
+  const selectedCriteria = selectedCriteriaId ? scoringCriteria.find(c => c.id === selectedCriteriaId) : null;
+
+  const handleTimestampClick = (timestamp: string) => {
+    setHighlightedTimestamp(timestamp);
+    const element = document.getElementById(`transcript-${timestamp}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => setHighlightedTimestamp(null), 2000);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-slate-600">Loading analytics...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex -mx-8 -my-8 h-screen">
-      {/* Middle Section - Analytics */}
-      <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
-          <div className="mb-6">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-medium rounded-lg transition-colors mb-4"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to History
-            </button>
+    <div className="flex h-screen bg-white">
+      {/* Left Side - Video/Audio Player and Transcript */}
+      <div className="flex-1 flex flex-col border-r border-slate-200">
+        {/* Header */}
+        <div className="p-6 border-b border-slate-200">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Back
+          </button>
 
-            <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold"
-                    style={{ backgroundColor: bot.avatar_color }}
-                  >
-                    {bot.avatar_initials}
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-900">{bot.name}</h2>
-                    <p className="text-slate-600">{bot.call_type}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-slate-600">{analyticsData.date}</p>
-                  <p className="text-sm text-slate-600">{analyticsData.duration}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={() => {
-                    setSelectedMetric('overall-score');
-                    setSelectedCriteriaId(null);
-                  }}
-                  className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-5 border border-cyan-200 hover:border-cyan-400 hover:shadow-lg transition-all text-left">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Award className="w-5 h-5 text-cyan-600" />
-                    <h3 className="font-semibold text-cyan-900">Overall Score</h3>
-                  </div>
-                  <p className="text-4xl font-bold text-cyan-900 mb-2">{detailedTotalScore}/{detailedMaxScore}</p>
-                  <p className="text-sm text-cyan-700">{analyticsData.framework} Framework</p>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedMetric('talk-percentage');
-                    setSelectedCriteriaId(null);
-                  }}
-                  className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 border border-emerald-200 hover:border-emerald-400 hover:shadow-lg transition-all text-left">
-                  <div className="flex items-center gap-2 mb-3">
-                    <MessageSquare className="w-5 h-5 text-emerald-600" />
-                    <h3 className="font-semibold text-emerald-900">Your Talk %</h3>
-                  </div>
-                  <p className="text-4xl font-bold text-emerald-900 mb-2">{analyticsData.userTalkPercentage}%</p>
-                  <div className="w-full bg-emerald-200 rounded-full h-2">
-                    <div
-                      className="bg-emerald-600 h-2 rounded-full"
-                      style={{ width: `${analyticsData.userTalkPercentage}%` }}
-                    />
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedMetric('sentiment');
-                    setSelectedCriteriaId(null);
-                  }}
-                  className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-5 border border-violet-200 hover:border-violet-400 hover:shadow-lg transition-all text-left">
-                  <div className="flex items-center gap-2 mb-3">
-                    <TrendingUp className="w-5 h-5 text-violet-600" />
-                    <h3 className="font-semibold text-violet-900">Your Sentiment</h3>
-                  </div>
-                  <p className={`text-2xl font-bold mb-2 ${userSentimentStyle.color}`}>
-                    {userSentimentStyle.label}
-                  </p>
-                  <p className="text-sm text-violet-700">
-                    Score: {(analyticsData.userSentiment * 100).toFixed(0)}%
-                  </p>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setSelectedMetric('duration');
-                    setSelectedCriteriaId(null);
-                  }}
-                  className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200 hover:border-slate-400 hover:shadow-lg transition-all text-left">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="w-5 h-5 text-slate-600" />
-                    <h3 className="font-semibold text-slate-900">Duration</h3>
-                  </div>
-                  <p className="text-4xl font-bold text-slate-900 mb-2">{analyticsData.duration}</p>
-                  <p className="text-sm text-slate-600">Total call time</p>
-                </button>
-              </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            Call with {analyticsData.caller}
+          </h1>
+          <div className="flex items-center gap-4 text-sm text-slate-600">
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              {analyticsData.participants} Participants
             </div>
-
-            {scoringCriteria.length > 0 && callScores.length > 0 && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h2 className="text-2xl font-bold text-slate-900 mb-6">Score Breakdown</h2>
-
-                {detailedOverallFeedback && (
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200 p-6 mb-6">
-                    <p className="text-sm text-slate-700">{detailedOverallFeedback}</p>
-                  </div>
-                )}
-
-                <div className="space-y-6">
-                  {sortedCategories.map(category => {
-                    const categoryCriteria = groupedCriteria[category].sort((a, b) => a.order_index - b.order_index);
-
-                    return (
-                      <div key={category} className="space-y-3">
-                        <h3 className="text-lg font-semibold text-slate-900">{getCategoryLabel(category)}</h3>
-
-                        <div className="space-y-2">
-                          {categoryCriteria.map(criterion => {
-                            const score = getScoreForCriteria(criterion.id);
-                            const isPassed = score?.passed || false;
-
-                            return (
-                              <button
-                                key={criterion.id}
-                                onClick={() => {
-                                  setSelectedCriteriaId(criterion.id);
-                                  setSelectedMetric(null);
-                                }}
-                                className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all hover:shadow-md ${
-                                  selectedCriteriaId === criterion.id
-                                    ? 'border-cyan-300 bg-cyan-50'
-                                    : isPassed
-                                    ? 'border-green-200 bg-green-50 hover:border-green-300'
-                                    : 'border-red-200 bg-red-50 hover:border-red-300'
-                                }`}
-                              >
-                                <div className="flex-shrink-0">
-                                  {isPassed ? (
-                                    <CheckCircle className="w-6 h-6 text-green-600" />
-                                  ) : (
-                                    <XCircle className="w-6 h-6 text-red-600" />
-                                  )}
-                                </div>
-
-                                <div className="flex-1 text-left">
-                                  <div className="font-medium text-slate-900">{criterion.name}</div>
-                                  <div className="text-sm text-slate-600">{criterion.description}</div>
-                                </div>
-
-                                <div className="flex items-center gap-3">
-                                  <span className={`text-lg font-bold ${
-                                    isPassed ? 'text-green-700' : 'text-red-700'
-                                  }`}>
-                                    {score?.score || 0}/{criterion.max_score}
-                                  </span>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <div>{analyticsData.date}</div>
+            <div>{analyticsData.duration}</div>
+            <div className="ml-auto">
+              <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
+                Score: {detailedTotalScore}/{detailedMaxScore}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Right Section - Transcript & Details */}
-        <div className="w-96 bg-white border-l border-slate-200 overflow-y-auto">
-          {selectedMetric ? (
-            <div className="p-6">
-              {selectedMetric === 'overall-score' && (
-                <>
-                  <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-xl border-2 border-cyan-200 mb-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <Award className="w-6 h-6 text-cyan-600 flex-shrink-0" />
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">Overall Score</h3>
-                        <p className="text-sm text-slate-600 mt-1">Your total performance across all criteria</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg text-sm font-bold bg-cyan-100 text-cyan-700">
-                        Score: {detailedTotalScore}/{detailedMaxScore}
-                      </span>
-                    </div>
-                  </div>
+        {/* Video/Audio Player */}
+        <div className="p-6 border-b border-slate-200 bg-slate-900">
+          <div className="aspect-video bg-slate-800 rounded-lg flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center mx-auto mb-3">
+                <Play className="w-8 h-8 text-slate-400" />
+              </div>
+              <p className="text-slate-400">No recording available</p>
+            </div>
+          </div>
 
-                  <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-xl border-2 border-cyan-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-cyan-600" />
-                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
-                    </div>
-                    <div className="text-sm text-slate-800 leading-relaxed">
-                      {detailedOverallFeedback || `You scored ${detailedTotalScore} out of ${detailedMaxScore} points using the ${analyticsData.framework} framework. This score is based on your performance across all evaluated criteria including opening, discovery, objection handling, value proposition, and closing.`}
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <h4 className="text-sm font-bold text-slate-900">How to improve</h4>
-                    </div>
-                    <div className="text-sm text-slate-800">
-                      Review each criterion below to see specific areas where you can improve. Focus on the ones marked as "Needs Improvement" first.
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {selectedMetric === 'talk-percentage' && (
-                <>
-                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-200 mb-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <MessageSquare className="w-6 h-6 text-emerald-600 flex-shrink-0" />
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">Talk Percentage</h3>
-                        <p className="text-sm text-slate-600 mt-1">How much you spoke during the call</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg text-sm font-bold bg-emerald-100 text-emerald-700">
-                        You: {analyticsData.userTalkPercentage}% | Bot: {analyticsData.botTalkPercentage}%
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-600" />
-                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
-                    </div>
-                    <div className="text-sm text-slate-800 leading-relaxed">
-                      {analyticsData.userTalkPercentage > 60
-                        ? `You dominated the conversation at ${analyticsData.userTalkPercentage}%. While it's important to be engaged, talking too much can prevent you from understanding the prospect's needs. The ideal range is 40-50%.`
-                        : analyticsData.userTalkPercentage < 35
-                        ? `You only spoke ${analyticsData.userTalkPercentage}% of the time. You should be more active in driving the conversation and asking discovery questions. Aim for 40-50%.`
-                        : `Your talk time of ${analyticsData.userTalkPercentage}% is well-balanced. This shows good listening skills while maintaining control of the conversation.`
-                      }
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <h4 className="text-sm font-bold text-slate-900">Best practices</h4>
-                    </div>
-                    <ol className="space-y-2">
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-                        <span>Aim for 40-50% talk time in discovery calls</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-                        <span>Ask open-ended questions and let prospects elaborate</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
-                        <span>Pause after key points to encourage dialogue</span>
-                      </li>
-                    </ol>
-                  </div>
-                </>
-              )}
-
-              {selectedMetric === 'sentiment' && (
-                <>
-                  <div className="bg-gradient-to-br from-violet-50 to-purple-50 p-4 rounded-xl border-2 border-violet-200 mb-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <TrendingUp className="w-6 h-6 text-violet-600 flex-shrink-0" />
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">Sentiment Analysis</h3>
-                        <p className="text-sm text-slate-600 mt-1">The emotional tone of your conversation</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-lg text-sm font-bold ${userSentimentStyle.bg} ${userSentimentStyle.color}`}>
-                        {userSentimentStyle.label} ({(analyticsData.userSentiment * 100).toFixed(0)}%)
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-violet-50 to-purple-50 p-4 rounded-xl border-2 border-violet-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-violet-600" />
-                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
-                    </div>
-                    <div className="text-sm text-slate-800 leading-relaxed">
-                      {analyticsData.userSentiment >= 0.6
-                        ? 'Your tone was positive and enthusiastic throughout the call. This helps build rapport and keeps prospects engaged.'
-                        : analyticsData.userSentiment >= 0.3
-                        ? 'Your tone was neutral during this call. Consider adding more energy and enthusiasm to better connect with prospects.'
-                        : 'Your tone appeared negative or uncertain. Work on maintaining a more positive, confident demeanor during calls.'
-                      }
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <h4 className="text-sm font-bold text-slate-900">Tips for better sentiment</h4>
-                    </div>
-                    <ol className="space-y-2">
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-                        <span>Smile while talking - it comes through in your voice</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-                        <span>Use positive language and affirmations</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
-                        <span>Match the prospect's energy level appropriately</span>
-                      </li>
-                    </ol>
-                  </div>
-                </>
-              )}
-
-              {selectedMetric === 'duration' && (
-                <>
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border-2 border-slate-200 mb-4">
-                    <div className="flex items-start gap-3 mb-3">
-                      <Clock className="w-6 h-6 text-slate-600 flex-shrink-0" />
-                      <div>
-                        <h3 className="text-lg font-bold text-slate-900">Call Duration</h3>
-                        <p className="text-sm text-slate-600 mt-1">Total time spent on the call</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg text-sm font-bold bg-slate-100 text-slate-700">
-                        {analyticsData.duration}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border-2 border-slate-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-slate-600" />
-                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
-                    </div>
-                    <div className="text-sm text-slate-800 leading-relaxed">
-                      Your call lasted {analyticsData.duration}. For discovery calls, the ideal length is typically 15-30 minutes - long enough to uncover needs but short enough to respect the prospect's time.
-                    </div>
-                  </div>
-
-                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
-                    <div className="flex items-start gap-2 mb-3">
-                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                      <h4 className="text-sm font-bold text-slate-900">Time management tips</h4>
-                    </div>
-                    <ol className="space-y-2">
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
-                        <span>Set expectations at the start: "I have 20 minutes, does that work?"</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
-                        <span>Keep your agenda focused on 3-5 key discovery questions</span>
-                      </li>
-                      <li className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
-                        <span>If running long, summarize and schedule a follow-up</span>
-                      </li>
-                    </ol>
-                  </div>
-                </>
-              )}
-
-              <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-lg font-bold text-slate-900 mb-4">Transcript</h3>
-                <div className="space-y-2">
-                  {analyticsData.conversationFlow.map((msg, i) => (
-                    <div
-                      key={i}
-                      id={`transcript-${msg.timestamp}`}
-                      className={`p-3 rounded-lg ${
-                        msg.speaker === 'user' ? 'bg-blue-50' : 'bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-start gap-2 mb-1">
-                        <span className="text-xs font-mono text-slate-500">{msg.timestamp}</span>
-                        <span className={`text-xs font-semibold ${
-                          msg.speaker === 'user' ? 'text-blue-600' : 'text-slate-600'
-                        }`}>
-                          {msg.speaker === 'user' ? 'You' : bot.name}
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-800">{msg.text}</p>
-                    </div>
-                  ))}
-                </div>
+          {/* Audio Controls */}
+          <div className="mt-4 flex items-center gap-4">
+            <button className="w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center">
+              <Play className="w-5 h-5 text-white" />
+            </button>
+            <div className="flex-1">
+              <div className="h-1 bg-slate-700 rounded-full">
+                <div className="h-1 bg-blue-600 rounded-full" style={{ width: '0%' }}></div>
+              </div>
+              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <span>0:00</span>
+                <span>0:00</span>
               </div>
             </div>
-          ) : selectedCriteria && selectedScore ? (
-            <div className="p-6">
-              <div className={`p-4 rounded-xl border-2 mb-4 ${
-                selectedScore.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
-              }`}>
-                <div className="flex items-start gap-3 mb-3">
-                  {selectedScore.passed ? (
-                    <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
-                  ) : (
-                    <XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
-                  )}
-                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">{selectedCriteria.name}</h3>
-                    <p className="text-sm text-slate-600 mt-1">{selectedCriteria.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-lg text-sm font-bold ${
-                    selectedScore.passed
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
+          </div>
+        </div>
+
+        {/* Transcript */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-slate-900">Transcript</h2>
+            <input
+              type="text"
+              placeholder="Search..."
+              className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm"
+            />
+          </div>
+
+          <div className="space-y-4">
+            {analyticsData.conversationFlow.map((msg, i) => (
+              <div
+                key={i}
+                id={`transcript-${msg.timestamp}`}
+                className={`p-4 rounded-lg transition-all ${
+                  highlightedTimestamp === msg.timestamp
+                    ? 'bg-yellow-100 ring-2 ring-yellow-400'
+                    : msg.speaker === 'user'
+                    ? 'bg-slate-50'
+                    : 'bg-white border border-slate-200'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    msg.speaker === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-slate-200 text-slate-600'
                   }`}>
-                    Score: {selectedScore.score}/{selectedCriteria.max_score}
-                  </span>
-                  <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${
-                    selectedScore.passed
-                      ? 'bg-green-600 text-white'
-                      : 'bg-red-600 text-white'
-                  }`}>
-                    {selectedScore.passed ? 'Passed' : 'Needs Improvement'}
-                  </span>
-                </div>
-              </div>
-
-              <div className={`p-4 rounded-xl border-2 mb-4 ${
-                selectedScore.passed
-                  ? 'border-green-200 bg-green-50'
-                  : 'border-red-200 bg-red-50'
-              }`}>
-                <div className="flex items-start gap-2 mb-3">
-                  <AlertCircle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${
-                    selectedScore.passed ? 'text-green-600' : 'text-red-600'
-                  }`} />
-                  <h4 className="text-sm font-bold text-slate-900">Why were you scored this way?</h4>
-                </div>
-                <div className="text-sm text-slate-800 leading-relaxed space-y-2">
-                  {selectedScore.feedback.split('\n\n').map((paragraph, idx) => (
-                    <p key={idx}>{paragraph}</p>
-                  ))}
-                </div>
-
-                {selectedScore.transcript_references && selectedScore.transcript_references.length > 0 && (
-                  <div className="mt-3 space-y-2">
-                    {selectedScore.transcript_references.map((ref, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => scrollToTranscript(ref.timestamp)}
-                        className="flex items-start gap-2 w-full text-left p-2 bg-white rounded-lg border border-slate-300 hover:border-cyan-400 hover:shadow-sm transition-all"
-                      >
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center">
-                          {idx + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-xs font-mono text-cyan-600 font-semibold">
-                            ({ref.timestamp})
-                          </span>
-                          <p className="text-xs text-slate-700 mt-1 italic truncate">"{ref.text}"</p>
-                        </div>
-                      </button>
-                    ))}
+                    {msg.speaker === 'user' ? 'C' : bot.name.charAt(0)}
                   </div>
-                )}
-              </div>
-
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
-                <div className="flex items-start gap-2 mb-3">
-                  <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                  <h4 className="text-sm font-bold text-slate-900">What could you do differently?</h4>
-                </div>
-                {selectedScore.improvement_examples && selectedScore.improvement_examples.length > 0 ? (
-                  <ol className="space-y-2">
-                    {selectedScore.improvement_examples.map((example, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-slate-800">
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
-                          {idx + 1}
-                        </span>
-                        <span className="flex-1">{example}</span>
-                      </li>
-                    ))}
-                  </ol>
-                ) : selectedScore.passed ? (
-                  <p className="text-sm text-slate-800">Excellent work! Continue this approach.</p>
-                ) : (
-                  <p className="text-sm text-slate-800">N/A</p>
-                )}
-              </div>
-
-              <div className="border-t border-slate-200 pt-4">
-                <h3 className="text-lg font-bold text-slate-900 mb-4">Transcript</h3>
-                <div className="space-y-2">
-                  {analyticsData.conversationFlow.map((msg, i) => (
-                    <div
-                      key={i}
-                      id={`transcript-${msg.timestamp}`}
-                      className={`p-3 rounded-lg transition-all ${
-                        highlightedTimestamp === msg.timestamp
-                          ? 'bg-cyan-100 border-2 border-cyan-400'
-                          : msg.speaker === 'user'
-                          ? 'bg-blue-50'
-                          : 'bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-start gap-2 mb-1">
-                        <span className="text-xs font-mono text-slate-500">{msg.timestamp}</span>
-                        <span className={`text-xs font-semibold ${
-                          msg.speaker === 'user' ? 'text-blue-600' : 'text-slate-600'
-                        }`}>
-                          {msg.speaker === 'user' ? 'You' : bot.name}
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-800">{msg.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-900 mb-4">Transcript</h3>
-              <div className="space-y-2">
-                {analyticsData.conversationFlow.map((msg, i) => (
-                  <div
-                    key={i}
-                    id={`transcript-${msg.timestamp}`}
-                    className={`p-3 rounded-lg ${
-                      msg.speaker === 'user' ? 'bg-blue-50' : 'bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2 mb-1">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs font-mono text-slate-500">{msg.timestamp}</span>
-                      <span className={`text-xs font-semibold ${
-                        msg.speaker === 'user' ? 'text-blue-600' : 'text-slate-600'
-                      }`}>
-                        {msg.speaker === 'user' ? 'You' : bot.name}
+                      <span className="text-sm font-semibold text-slate-900">
+                        {msg.speaker === 'user' ? analyticsData.caller : bot.name}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-800">{msg.text}</p>
+                    <p className="text-sm text-slate-700">{msg.text}</p>
                   </div>
-                ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Tabs and Content */}
+      <div className="w-[600px] flex flex-col">
+        {/* Tabs */}
+        <div className="border-b border-slate-200">
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('participants')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'participants'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Participants
+            </button>
+            <button
+              onClick={() => setActiveTab('scorecard')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'scorecard'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Scorecard
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'analytics'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Analytics
+            </button>
+            <button
+              onClick={() => setActiveTab('feedback')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'feedback'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Feedback
+            </button>
+            <button
+              onClick={() => setActiveTab('objections')}
+              className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'objections'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Objections
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="flex-1 overflow-y-auto">
+          {activeTab === 'scorecard' && !selectedCriteriaId && (
+            <div className="p-6">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Award className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Score: {detailedTotalScore}/{detailedMaxScore}
+                  </h3>
+                </div>
+                <p className="text-sm text-slate-600">
+                  You got {detailedTotalScore}/{detailedMaxScore} criteria correct. For this call, the scorecard is the best resource to understand what went right and what went wrong. Dive into each criteria to check out detailed feedback.
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                {Object.entries(groupedCriteria).map(([category, criteria]) => {
+                  const categoryScore = getCategoryScore(category);
+                  return (
+                    <div key={category}>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wide">
+                          {category}
+                        </h3>
+                        <span className="text-sm font-semibold text-slate-600">
+                          {categoryScore.total}/{categoryScore.max}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {criteria.map((criterion) => {
+                          const score = getScoreForCriteria(criterion.id);
+                          const isPassed = score?.passed || false;
+
+                          return (
+                            <button
+                              key={criterion.id}
+                              onClick={() => setSelectedCriteriaId(criterion.id)}
+                              className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all text-left group"
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                {isPassed ? (
+                                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                                ) : (
+                                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                                )}
+                                <span className="text-sm font-medium text-slate-900">
+                                  {category} – {criterion.name}
+                                </span>
+                              </div>
+                              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
+
+          {activeTab === 'scorecard' && selectedCriteriaId && selectedCriteria && selectedScore && (
+            <div className="p-6">
+              <button
+                onClick={() => setSelectedCriteriaId(null)}
+                className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                View full scorecard
+              </button>
+
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                  {selectedScore.passed ? (
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                  ) : (
+                    <XCircle className="w-6 h-6 text-red-600" />
+                  )}
+                  <h2 className="text-xl font-bold text-slate-900">
+                    {selectedCriteria.category} – {selectedCriteria.name}
+                  </h2>
+                </div>
+                <p className="text-sm text-slate-600 uppercase tracking-wide font-semibold">
+                  {selectedCriteria.category}
+                </p>
+              </div>
+
+              <div className="space-y-6">
+                <div className={`p-4 rounded-lg border-2 ${
+                  selectedScore.passed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                }`}>
+                  <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    <Award className="w-4 h-4" />
+                    Why were you scored this way?
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {selectedScore.feedback}
+                  </p>
+                </div>
+
+                {selectedScore.transcript_references && selectedScore.transcript_references.length > 0 && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
+                    <h3 className="text-sm font-bold text-slate-900 mb-3">
+                      Evidence from transcript:
+                    </h3>
+                    <ol className="space-y-3">
+                      {selectedScore.transcript_references.map((ref, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-600 text-white text-xs font-bold flex items-center justify-center">
+                            {idx + 1}
+                          </span>
+                          <div className="flex-1">
+                            <button
+                              onClick={() => handleTimestampClick(ref.timestamp)}
+                              className="text-blue-600 hover:text-blue-700 font-mono text-xs mb-1"
+                            >
+                              ({ref.timestamp})
+                            </button>
+                            <p className="text-sm text-slate-700">
+                              "{ref.text}"
+                            </p>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {!selectedScore.passed && selectedScore.improvement_examples && selectedScore.improvement_examples.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h3 className="text-sm font-bold text-slate-900 mb-3">
+                      What could you do differently next time?
+                    </h3>
+                    <ul className="space-y-2">
+                      {selectedScore.improvement_examples.map((example, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                          <span className="text-blue-600 flex-shrink-0">•</span>
+                          <span>{example}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'participants' && (
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Call Participants (2)</h2>
+              <p className="text-sm text-slate-600 mb-6">Engagement metrics and participation data</p>
+
+              <div className="space-y-4">
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                      M
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{analyticsData.caller}</h3>
+                      <p className="text-sm text-slate-600">Sales Rep</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900">7</div>
+                      <div className="text-xs text-slate-600">Questions Asked</div>
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-slate-900">0.8</div>
+                      <div className="text-xs text-slate-600">Sentiment Score</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold">
+                      {bot.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{bot.name}</h3>
+                      <p className="text-sm text-slate-600">Prospect</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Call Analytics</h2>
+              <p className="text-slate-600">Analytics view coming soon...</p>
+            </div>
+          )}
+
+          {activeTab === 'feedback' && (
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Feedback</h2>
+              <p className="text-slate-600">Feedback view coming soon...</p>
+            </div>
+          )}
+
+          {activeTab === 'objections' && (
+            <div className="p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Objections</h2>
+              <p className="text-slate-600">Objections view coming soon...</p>
+            </div>
+          )}
         </div>
+      </div>
     </div>
   );
 }
