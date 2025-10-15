@@ -1,25 +1,42 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, Clock, Search } from 'lucide-react';
+import { Plus, Clock, Search, Info } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { CreateRoomModal, RoomFormData } from '../components/CreateRoomModal';
+import { HumanCallRoomView } from './HumanCallRoomView';
 
 interface PracticeRoom {
   id: string;
   name: string;
+  room_code: string;
   created_by: string;
   status: 'waiting' | 'active' | 'completed';
   created_at: string;
   participants_count: number;
+  rep_name: string;
+  client_name: string;
+  client_company: string;
 }
 
 export function HumanToHumanView() {
   const [rooms, setRooms] = useState<PracticeRoom[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newRoomName, setNewRoomName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRooms();
+
+    const channel = supabase
+      .channel('practice_rooms_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'practice_rooms' }, () => {
+        fetchRooms();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchRooms() {
@@ -38,15 +55,23 @@ export function HumanToHumanView() {
     }
   }
 
-  async function createRoom() {
-    if (!newRoomName.trim()) return;
-
+  async function createRoom(formData: RoomFormData) {
     try {
+      const roomCode = await generateRoomCode();
+
       const { error } = await supabase
         .from('practice_rooms')
         .insert([
           {
-            name: newRoomName,
+            name: formData.name,
+            room_code: roomCode,
+            rep_name: formData.rep_name,
+            client_name: formData.client_name,
+            client_company: formData.client_company,
+            client_designation: formData.client_designation,
+            company_description: formData.company_description,
+            call_objective: formData.call_objective,
+            call_cta: formData.call_cta,
             status: 'waiting',
             participants_count: 0,
           },
@@ -54,17 +79,43 @@ export function HumanToHumanView() {
 
       if (error) throw error;
 
-      setNewRoomName('');
       setShowCreateModal(false);
       fetchRooms();
     } catch (error) {
       console.error('Error creating room:', error);
+      alert('Failed to create room. Please try again.');
     }
+  }
+
+  async function generateRoomCode(): Promise<string> {
+    const { data, error } = await supabase.rpc('generate_room_code');
+    if (error || !data) {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+    return data;
+  }
+
+  function handleJoinRoom(roomId: string) {
+    setActiveRoomId(roomId);
+  }
+
+  function handleLeaveRoom() {
+    setActiveRoomId(null);
+    fetchRooms();
   }
 
   const filteredRooms = rooms.filter((room) =>
     room.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (activeRoomId) {
+    return <HumanCallRoomView roomId={activeRoomId} onLeave={handleLeaveRoom} />;
+  }
 
   if (loading) {
     return (
@@ -80,7 +131,7 @@ export function HumanToHumanView() {
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Human to Human Practice</h1>
           <p className="text-slate-600">
-            Practice with a colleague or manager. Create or join a practice room.
+            Practice with a colleague or manager using live video calls. Create structured roleplay scenarios.
           </p>
         </div>
         <button
@@ -90,6 +141,18 @@ export function HumanToHumanView() {
           <Plus className="w-5 h-5" />
           Create Room
         </button>
+      </div>
+
+      <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+        <div className="flex gap-3">
+          <Info className="w-5 h-5 text-cyan-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-cyan-900">
+            <p className="font-medium mb-1">WebRTC-based Video Calls</p>
+            <p className="text-cyan-800">
+              Rooms use peer-to-peer video connections. Share the room code with your partner to join the same session.
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-4">
@@ -112,15 +175,20 @@ export function HumanToHumanView() {
             className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-start justify-between mb-4">
-              <div>
+              <div className="flex-1 pr-2">
                 <h3 className="text-lg font-bold text-slate-900 mb-1">{room.name}</h3>
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex items-center gap-2 text-sm text-slate-500 mb-2">
                   <Clock className="w-4 h-4" />
                   {new Date(room.created_at).toLocaleDateString()}
                 </div>
+                {room.room_code && (
+                  <div className="text-xs text-slate-600 font-mono bg-slate-100 px-2 py-1 rounded inline-block">
+                    Code: {room.room_code}
+                  </div>
+                )}
               </div>
               <span
-                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
                   room.status === 'waiting'
                     ? 'bg-yellow-100 text-yellow-700'
                     : room.status === 'active'
@@ -132,12 +200,23 @@ export function HumanToHumanView() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2 text-sm text-slate-600 mb-4">
-              <Users className="w-4 h-4" />
-              {room.participants_count} participant{room.participants_count !== 1 ? 's' : ''}
-            </div>
+            {room.rep_name && room.client_name && (
+              <div className="mb-4 text-sm">
+                <div className="flex items-center gap-2 text-slate-600">
+                  <span className="font-medium">Rep:</span>
+                  <span>{room.rep_name}</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-600">
+                  <span className="font-medium">Client:</span>
+                  <span>{room.client_name} ({room.client_company})</span>
+                </div>
+              </div>
+            )}
 
-            <button className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors">
+            <button
+              onClick={() => handleJoinRoom(room.id)}
+              className="w-full px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors"
+            >
               Join Room
             </button>
           </div>
@@ -151,34 +230,10 @@ export function HumanToHumanView() {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-slate-900 mb-4">Create Practice Room</h3>
-            <input
-              type="text"
-              placeholder="Room name (e.g., Discovery Call Practice)"
-              value={newRoomName}
-              onChange={(e) => setNewRoomName(e.target.value)}
-              className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none mb-4"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2.5 text-slate-600 hover:text-slate-900 font-medium transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={createRoom}
-                disabled={!newRoomName.trim()}
-                className="flex-1 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Create
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateRoomModal
+          onClose={() => setShowCreateModal(false)}
+          onCreateRoom={createRoom}
+        />
       )}
     </div>
   );

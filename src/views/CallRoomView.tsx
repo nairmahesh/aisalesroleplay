@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, MessageSquare, User, Bot as BotIcon, ArrowLeft, Users as UsersIcon } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, MessageSquare, User, Bot as BotIcon, ArrowLeft } from 'lucide-react';
 import { Bot, supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { PracticeMode } from '../components/PracticeModeSelector';
