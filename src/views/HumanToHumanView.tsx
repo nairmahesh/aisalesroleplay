@@ -51,6 +51,7 @@ export function HumanToHumanView() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      console.log('Fetched rooms:', data);
       setRooms(data || []);
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -73,7 +74,10 @@ export function HumanToHumanView() {
       if (formData.allow_external) {
         const { data } = await supabase.rpc('generate_external_invite_token');
         externalToken = data || generateFallbackToken();
+        console.log('External invite enabled, token:', externalToken);
       }
+
+      console.log('Creating room with external:', formData.allow_external, 'token:', externalToken);
 
       const { error } = await supabase
         .from('practice_rooms')
@@ -99,7 +103,7 @@ export function HumanToHumanView() {
       if (error) throw error;
 
       setShowCreateModal(false);
-      fetchRooms();
+      await fetchRooms();
     } catch (error) {
       console.error('Error creating room:', error);
       alert('Failed to create room. Please try again.');
@@ -245,17 +249,21 @@ export function HumanToHumanView() {
               </div>
             )}
 
-            {room.allow_external && room.external_invite_token && (
+            {room.allow_external && room.external_invite_token ? (
               <div className="mb-3">
                 <button
                   onClick={() => openShareModal(room.external_invite_token!, room.name)}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-cyan-50 to-blue-50 hover:from-cyan-100 hover:to-blue-100 border border-cyan-200 text-cyan-700 text-sm font-semibold rounded-lg transition-all"
                 >
                   <Share2 className="w-4 h-4" />
                   <span>Share External Invite</span>
                 </button>
               </div>
-            )}
+            ) : room.allow_external ? (
+              <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                External access enabled - invite link generating...
+              </div>
+            ) : null}
 
             <button
               onClick={() => handleJoinRoom(room.id)}
