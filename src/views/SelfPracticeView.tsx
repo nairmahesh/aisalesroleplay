@@ -3,7 +3,7 @@ import { Search, Filter } from 'lucide-react';
 import { Bot, supabase } from '../lib/supabase';
 import { BotCard } from '../components/BotCard';
 import { BotDetailsModal } from '../components/BotDetailsModal';
-import { CallRoomView } from './CallRoomView';
+import { SelfPracticeRoomView } from './SelfPracticeRoomView';
 
 export function SelfPracticeView() {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -76,7 +76,7 @@ export function SelfPracticeView() {
   }
 
   if (activeCallBot) {
-    return <CallRoomView bot={activeCallBot} practiceMode="self_practice" onEndCall={handleEndCall} />;
+    return <SelfPracticeRoomView bot={activeCallBot} onEndCall={handleEndCall} />;
   }
 
   if (loading) {
@@ -92,7 +92,7 @@ export function SelfPracticeView() {
       <div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2">Self Practice</h1>
         <p className="text-slate-600">
-          Record your pitch and get feedback. Select a bot scenario to practice with.
+          Write out your pitch and get feedback. Text-based practice mode for improving your messaging.
         </p>
       </div>
 
