@@ -470,7 +470,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                     <div className="w-80 overflow-y-auto p-6 bg-slate-50">
                       <h3 className="text-xl font-bold text-slate-900 mb-4">Transcript</h3>
 
-                      {transcript && analyticsData.conversationFlow.length > 0 ? (
+                      {analyticsData.conversationFlow && analyticsData.conversationFlow.length > 0 ? (
                         <div className="space-y-2">
                           {analyticsData.conversationFlow.map((msg, i) => {
                             const isHighlighted = highlightedTimestamp === msg.timestamp;
