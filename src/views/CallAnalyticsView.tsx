@@ -572,7 +572,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                       <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Your Talk Time</span>
                       <MessageCircle className="w-4 h-4 text-blue-600" />
                     </div>
-                    <div className="text-3xl font-bold text-slate-900 mb-1">{analytics.user_talk_percentage}%</div>
+                    <div className="text-2xl font-bold text-slate-900 mb-1">{analytics.user_talk_percentage}%</div>
                     <div className="w-full bg-slate-200 rounded-full h-2">
                       <div
                         className="bg-blue-600 h-2 rounded-full transition-all"
@@ -586,7 +586,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                       <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Prospect Talk Time</span>
                       <MessageCircle className="w-4 h-4 text-slate-600" />
                     </div>
-                    <div className="text-3xl font-bold text-slate-900 mb-1">{analytics.bot_talk_percentage}%</div>
+                    <div className="text-2xl font-bold text-slate-900 mb-1">{analytics.bot_talk_percentage}%</div>
                     <div className="w-full bg-slate-200 rounded-full h-2">
                       <div
                         className="bg-slate-600 h-2 rounded-full transition-all"
@@ -600,7 +600,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                       <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Your Sentiment</span>
                       <ThumbsUp className="w-4 h-4 text-green-600" />
                     </div>
-                    <div className="text-3xl font-bold text-slate-900">{(analytics.user_sentiment_score * 100).toFixed(0)}%</div>
+                    <div className="text-2xl font-bold text-slate-900">{(analytics.user_sentiment_score * 100).toFixed(0)}%</div>
                   </div>
 
                   <div className="border border-slate-200 rounded-lg p-4">
@@ -608,7 +608,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                       <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Prospect Sentiment</span>
                       <ThumbsUp className="w-4 h-4 text-orange-600" />
                     </div>
-                    <div className="text-3xl font-bold text-slate-900">{(analytics.bot_sentiment_score * 100).toFixed(0)}%</div>
+                    <div className="text-2xl font-bold text-slate-900">{(analytics.bot_sentiment_score * 100).toFixed(0)}%</div>
                   </div>
                 </div>
 
@@ -618,7 +618,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                     <h3 className="text-sm font-bold text-slate-900">{analytics.evaluation_framework} Framework Score</h3>
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="text-4xl font-bold text-slate-900">{analytics.framework_score}<span className="text-xl text-slate-500">/100</span></div>
+                    <div className="text-3xl font-bold text-slate-900">{analytics.framework_score}<span className="text-lg text-slate-500">/100</span></div>
                     <div className="flex-1">
                       <div className="w-full bg-slate-200 rounded-full h-3">
                         <div
