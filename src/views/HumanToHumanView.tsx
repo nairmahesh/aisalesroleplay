@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Clock, Search, Info, Link2, Check } from 'lucide-react';
+import { Plus, Clock, Search, Info, Share2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { CreateRoomModal, RoomFormData } from '../components/CreateRoomModal';
+import { ShareInviteModal } from '../components/ShareInviteModal';
 import { HumanCallRoomView } from './HumanCallRoomView';
 
 interface PracticeRoom {
@@ -25,7 +26,7 @@ export function HumanToHumanView() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [shareRoom, setShareRoom] = useState<{ token: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchRooms();
@@ -60,6 +61,12 @@ export function HumanToHumanView() {
 
   async function createRoom(formData: RoomFormData) {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        alert('You must be logged in to create a room');
+        return;
+      }
+
       const roomCode = await generateRoomCode();
       let externalToken = null;
 
@@ -74,6 +81,7 @@ export function HumanToHumanView() {
           {
             name: formData.name,
             room_code: roomCode,
+            created_by: user.id,
             rep_name: formData.rep_name,
             client_name: formData.client_name,
             client_company: formData.client_company,
@@ -129,12 +137,8 @@ export function HumanToHumanView() {
     fetchRooms();
   }
 
-  function copyInviteLink(token: string) {
-    const baseUrl = window.location.origin;
-    const inviteUrl = `${baseUrl}/invite?token=${token}`;
-    navigator.clipboard.writeText(inviteUrl);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
+  function openShareModal(token: string, roomName: string) {
+    setShareRoom({ token, name: roomName });
   }
 
   const filteredRooms = rooms.filter((room) =>
@@ -244,20 +248,11 @@ export function HumanToHumanView() {
             {room.allow_external && room.external_invite_token && (
               <div className="mb-3">
                 <button
-                  onClick={() => copyInviteLink(room.external_invite_token!)}
+                  onClick={() => openShareModal(room.external_invite_token!, room.name)}
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
                 >
-                  {copiedToken === room.external_invite_token ? (
-                    <>
-                      <Check className="w-4 h-4 text-green-600" />
-                      <span className="text-green-600">Link Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Link2 className="w-4 h-4" />
-                      <span>Copy External Invite Link</span>
-                    </>
-                  )}
+                  <Share2 className="w-4 h-4" />
+                  <span>Share External Invite</span>
                 </button>
               </div>
             )}
@@ -282,6 +277,14 @@ export function HumanToHumanView() {
         <CreateRoomModal
           onClose={() => setShowCreateModal(false)}
           onCreateRoom={createRoom}
+        />
+      )}
+
+      {shareRoom && (
+        <ShareInviteModal
+          inviteToken={shareRoom.token}
+          roomName={shareRoom.name}
+          onClose={() => setShareRoom(null)}
         />
       )}
     </div>
