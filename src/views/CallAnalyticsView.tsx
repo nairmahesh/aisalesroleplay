@@ -51,9 +51,16 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
         .eq('session_id', sessionId)
         .maybeSingle();
 
-      if (criteriaData) setScoringCriteria(criteriaData);
-      if (scoresData) setCallScores(scoresData);
+      if (criteriaData) {
+        console.log('Loaded criteria:', criteriaData.length, 'items');
+        setScoringCriteria(criteriaData);
+      }
+      if (scoresData) {
+        console.log('Loaded scores:', scoresData.length, 'items');
+        setCallScores(scoresData);
+      }
       if (analyticsData) {
+        console.log('Loaded analytics:', analyticsData);
         setDetailedTotalScore(analyticsData.total_score || 0);
         setDetailedMaxScore(analyticsData.max_score || 100);
         setDetailedOverallFeedback(analyticsData.overall_feedback || '');
