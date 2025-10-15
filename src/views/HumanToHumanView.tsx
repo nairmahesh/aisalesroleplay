@@ -93,13 +93,17 @@ export function HumanToHumanView() {
           },
         ]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        alert(`Failed to create room: ${error.message || JSON.stringify(error)}`);
+        throw error;
+      }
 
       setShowCreateModal(false);
       await fetchRooms();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating room:', error);
-      alert('Failed to create room. Please try again.');
+      alert(`Failed to create room: ${error?.message || error}`);
     }
   }
 
@@ -113,8 +117,20 @@ export function HumanToHumanView() {
   }
 
   async function generateRoomCode(): Promise<string> {
-    const { data, error } = await supabase.rpc('generate_room_code');
-    if (error || !data) {
+    try {
+      const { data, error } = await supabase.rpc('generate_room_code');
+      if (error || !data) {
+        console.log('RPC generate_room_code not available, using fallback');
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) {
+          code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+      }
+      return data;
+    } catch (err) {
+      console.log('Error calling generate_room_code RPC, using fallback:', err);
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
       let code = '';
       for (let i = 0; i < 6; i++) {
@@ -122,7 +138,6 @@ export function HumanToHumanView() {
       }
       return code;
     }
-    return data;
   }
 
   function handleJoinRoom(roomId: string) {
