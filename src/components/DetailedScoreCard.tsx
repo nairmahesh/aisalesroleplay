@@ -248,7 +248,7 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
             </div>
 
             <div className="flex-1 flex overflow-hidden">
-              <div className="w-1/2 overflow-y-auto p-6 border-r border-slate-200">
+              <div className="flex-1 overflow-y-auto p-6 border-r border-slate-200">
                 <h3 className="text-xl font-bold text-slate-900 mb-4">Feedback Details</h3>
 
                 <div className={`p-5 rounded-xl border-2 mb-4 ${
@@ -341,11 +341,11 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
                 )}
               </div>
 
-              <div className="w-1/2 overflow-y-auto p-6 bg-slate-50">
-                <h3 className="text-xl font-bold text-slate-900 mb-4">Full Transcript</h3>
+              <div className="w-80 overflow-y-auto p-6 bg-slate-50">
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Transcript</h3>
 
                 {transcript && transcript.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {transcript.map((msg, i) => {
                       const isHighlighted = highlightedTimestamp === msg.timestamp;
                       const isReferenced = selectedScore.transcript_references?.some(ref => ref.timestamp === msg.timestamp);
@@ -355,34 +355,31 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
                           key={i}
                           id={`modal-transcript-${msg.timestamp}`}
                           className={`transition-all duration-300 ${
-                            isHighlighted ? 'scale-[1.02]' : ''
+                            isHighlighted ? 'scale-[1.01]' : ''
                           }`}
                         >
-                          <div className={`p-3 rounded-lg transition-all duration-300 ${
+                          <div className={`p-2.5 rounded transition-all duration-300 ${
                             isHighlighted
-                              ? 'ring-2 ring-cyan-400 shadow-lg bg-gradient-to-br from-cyan-100 to-blue-100 border-2 border-cyan-400'
+                              ? 'bg-cyan-400 text-white'
                               : isReferenced
-                              ? 'bg-white border-2 border-cyan-200'
-                              : msg.speaker === 'user'
-                              ? 'bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200'
-                              : 'bg-white border border-slate-200'
+                              ? 'bg-cyan-100'
+                              : 'hover:bg-slate-100'
                           }`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs font-mono text-slate-500">
+                            <div className="flex items-start gap-2 mb-1">
+                              <span className={`text-xs font-semibold ${
+                                isHighlighted ? 'text-white' : msg.speaker === 'user' ? 'text-cyan-700' : 'text-slate-600'
+                              }`}>
+                                {msg.speaker === 'user' ? 'You' : botName || 'Bot'}
+                              </span>
+                              <span className={`text-xs font-mono ${
+                                isHighlighted ? 'text-cyan-100' : 'text-slate-500'
+                              }`}>
                                 {msg.timestamp}
                               </span>
-                              <span className={`text-xs font-bold uppercase ${
-                                msg.speaker === 'user' ? 'text-cyan-700' : 'text-slate-600'
-                              }`}>
-                                {msg.speaker === 'user' ? 'YOU' : botName || 'BOT'}
-                              </span>
-                              {isReferenced && (
-                                <span className="text-xs font-semibold text-cyan-700 bg-cyan-200 px-2 py-0.5 rounded-full">
-                                  Referenced
-                                </span>
-                              )}
                             </div>
-                            <p className="text-sm text-slate-800">{msg.text}</p>
+                            <p className={`text-xs leading-relaxed ${
+                              isHighlighted ? 'text-white' : 'text-slate-700'
+                            }`}>{msg.text}</p>
                           </div>
                         </div>
                       );
