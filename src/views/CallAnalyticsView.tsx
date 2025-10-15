@@ -26,6 +26,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
   const [detailedMaxScore, setDetailedMaxScore] = useState<number>(100);
   const [detailedOverallFeedback, setDetailedOverallFeedback] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [highlightedTimestamp, setHighlightedTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     loadScoringData();
@@ -241,7 +242,16 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
   };
 
   const jumpToTimestamp = (timestamp: string) => {
-    console.log('Jump to timestamp:', timestamp);
+    setHighlightedTimestamp(timestamp);
+
+    const transcriptElement = document.getElementById(`transcript-${timestamp}`);
+    if (transcriptElement) {
+      transcriptElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      setTimeout(() => {
+        setHighlightedTimestamp(null);
+      }, 3000);
+    }
   };
 
   const getSentimentLabel = (score: number) => {
@@ -343,6 +353,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
           criteria={scoringCriteria}
           scores={callScores}
           overallFeedback={detailedOverallFeedback}
+          onCriterionClick={jumpToTimestamp}
         />
       )}
 
@@ -466,27 +477,43 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
       <div className="bg-white rounded-xl border border-slate-200 p-6">
         <h2 className="text-2xl font-bold text-slate-900 mb-6">Full Transcript</h2>
         <div className="space-y-4">
-          {analyticsData.conversationFlow.map((msg, i) => (
-            <div key={i} className="flex gap-4">
-              <div className="flex-shrink-0 w-16 text-xs text-slate-500 font-mono pt-1">
-                {msg.timestamp}
-              </div>
-              <div className={`flex-1 p-4 rounded-lg ${
-                msg.speaker === 'user'
-                  ? 'bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200'
-                  : 'bg-slate-50 border border-slate-200'
-              }`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className={`text-xs font-bold uppercase ${
-                    msg.speaker === 'user' ? 'text-cyan-700' : 'text-slate-600'
-                  }`}>
-                    {msg.speaker === 'user' ? 'You' : bot.name}
-                  </span>
+          {analyticsData.conversationFlow.map((msg, i) => {
+            const isHighlighted = highlightedTimestamp === msg.timestamp;
+            return (
+              <div
+                key={i}
+                id={`transcript-${msg.timestamp}`}
+                className={`flex gap-4 transition-all duration-500 ${
+                  isHighlighted ? 'scale-105' : ''
+                }`}
+              >
+                <div className="flex-shrink-0 w-16 text-xs text-slate-500 font-mono pt-1">
+                  {msg.timestamp}
                 </div>
-                <p className="text-sm text-slate-800">{msg.text}</p>
+                <div className={`flex-1 p-4 rounded-lg transition-all duration-500 ${
+                  isHighlighted
+                    ? 'ring-4 ring-cyan-400 shadow-lg bg-gradient-to-br from-cyan-100 to-blue-100 border-2 border-cyan-400'
+                    : msg.speaker === 'user'
+                    ? 'bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200'
+                    : 'bg-slate-50 border border-slate-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`text-xs font-bold uppercase ${
+                      msg.speaker === 'user' ? 'text-cyan-700' : 'text-slate-600'
+                    }`}>
+                      {msg.speaker === 'user' ? 'You' : bot.name}
+                    </span>
+                    {isHighlighted && (
+                      <span className="text-xs font-semibold text-cyan-700 bg-cyan-200 px-2 py-0.5 rounded-full animate-pulse">
+                        Referenced in scoring
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-800">{msg.text}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

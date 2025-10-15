@@ -27,9 +27,10 @@ interface DetailedScoreCardProps {
   criteria: ScoringCriteria[];
   scores: CallScore[];
   overallFeedback?: string;
+  onCriterionClick?: (timestamp: string) => void;
 }
 
-export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, overallFeedback }: DetailedScoreCardProps) {
+export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, overallFeedback, onCriterionClick }: DetailedScoreCardProps) {
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<string | null>(null);
 
   const getScoreForCriteria = (criteriaId: string) => {
@@ -221,11 +222,35 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
               {selectedScore.transcript_evidence && (
                 <div className="bg-slate-50 p-6 rounded-xl border-2 border-slate-300">
                   <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
-                      <span className="text-slate-700 font-mono text-sm font-bold">{selectedScore.timestamp || '0:00'}</span>
-                    </div>
+                    <button
+                      onClick={() => {
+                        if (selectedScore.timestamp && onCriterionClick) {
+                          onCriterionClick(selectedScore.timestamp);
+                          setSelectedCriteriaId(null);
+                        }
+                      }}
+                      className="flex-shrink-0 w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-700 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Jump to transcript"
+                    >
+                      <span className="text-white font-mono text-xs font-bold">{selectedScore.timestamp || '0:00'}</span>
+                    </button>
                     <div className="flex-1">
-                      <h4 className="text-lg font-bold text-slate-900 mb-3">Transcript Evidence</h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-lg font-bold text-slate-900">Transcript Evidence</h4>
+                        {selectedScore.timestamp && onCriterionClick && (
+                          <button
+                            onClick={() => {
+                              if (selectedScore.timestamp && onCriterionClick) {
+                                onCriterionClick(selectedScore.timestamp);
+                                setSelectedCriteriaId(null);
+                              }
+                            }}
+                            className="text-sm text-cyan-600 hover:text-cyan-700 font-semibold hover:underline"
+                          >
+                            View in Transcript
+                          </button>
+                        )}
+                      </div>
                       <div className="bg-white p-4 rounded-lg border border-slate-300 font-mono text-sm text-slate-800 whitespace-pre-wrap">
                         {selectedScore.transcript_evidence}
                       </div>
