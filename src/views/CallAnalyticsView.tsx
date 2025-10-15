@@ -44,6 +44,7 @@ interface TranscriptMessage {
 
 export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewProps) {
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<string | null>(null);
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
   const [scoringCriteria, setScoringCriteria] = useState<ScoringCriteria[]>([]);
   const [callScores, setCallScores] = useState<CallScore[]>([]);
   const [detailedTotalScore, setDetailedTotalScore] = useState<number>(0);
@@ -205,16 +206,26 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-5 border border-cyan-200">
+                <button
+                  onClick={() => {
+                    setSelectedMetric('overall-score');
+                    setSelectedCriteriaId(null);
+                  }}
+                  className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-xl p-5 border border-cyan-200 hover:border-cyan-400 hover:shadow-lg transition-all text-left">
                   <div className="flex items-center gap-2 mb-3">
                     <Award className="w-5 h-5 text-cyan-600" />
                     <h3 className="font-semibold text-cyan-900">Overall Score</h3>
                   </div>
                   <p className="text-4xl font-bold text-cyan-900 mb-2">{detailedTotalScore}/{detailedMaxScore}</p>
                   <p className="text-sm text-cyan-700">{analyticsData.framework} Framework</p>
-                </div>
+                </button>
 
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 border border-emerald-200">
+                <button
+                  onClick={() => {
+                    setSelectedMetric('talk-percentage');
+                    setSelectedCriteriaId(null);
+                  }}
+                  className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl p-5 border border-emerald-200 hover:border-emerald-400 hover:shadow-lg transition-all text-left">
                   <div className="flex items-center gap-2 mb-3">
                     <MessageSquare className="w-5 h-5 text-emerald-600" />
                     <h3 className="font-semibold text-emerald-900">Your Talk %</h3>
@@ -226,9 +237,14 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                       style={{ width: `${analyticsData.userTalkPercentage}%` }}
                     />
                   </div>
-                </div>
+                </button>
 
-                <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-5 border border-violet-200">
+                <button
+                  onClick={() => {
+                    setSelectedMetric('sentiment');
+                    setSelectedCriteriaId(null);
+                  }}
+                  className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl p-5 border border-violet-200 hover:border-violet-400 hover:shadow-lg transition-all text-left">
                   <div className="flex items-center gap-2 mb-3">
                     <TrendingUp className="w-5 h-5 text-violet-600" />
                     <h3 className="font-semibold text-violet-900">Your Sentiment</h3>
@@ -239,16 +255,21 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                   <p className="text-sm text-violet-700">
                     Score: {(analyticsData.userSentiment * 100).toFixed(0)}%
                   </p>
-                </div>
+                </button>
 
-                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200">
+                <button
+                  onClick={() => {
+                    setSelectedMetric('duration');
+                    setSelectedCriteriaId(null);
+                  }}
+                  className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-5 border border-slate-200 hover:border-slate-400 hover:shadow-lg transition-all text-left">
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="w-5 h-5 text-slate-600" />
                     <h3 className="font-semibold text-slate-900">Duration</h3>
                   </div>
                   <p className="text-4xl font-bold text-slate-900 mb-2">{analyticsData.duration}</p>
                   <p className="text-sm text-slate-600">Total call time</p>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -278,7 +299,10 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                             return (
                               <button
                                 key={criterion.id}
-                                onClick={() => setSelectedCriteriaId(criterion.id)}
+                                onClick={() => {
+                                  setSelectedCriteriaId(criterion.id);
+                                  setSelectedMetric(null);
+                                }}
                                 className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-all hover:shadow-md ${
                                   selectedCriteriaId === criterion.id
                                     ? 'border-cyan-300 bg-cyan-50'
@@ -322,7 +346,233 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
 
         {/* Right Section - Transcript & Details */}
         <div className="w-96 bg-white border-l border-slate-200 overflow-y-auto">
-          {selectedCriteria && selectedScore ? (
+          {selectedMetric ? (
+            <div className="p-6">
+              {selectedMetric === 'overall-score' && (
+                <>
+                  <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-xl border-2 border-cyan-200 mb-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <Award className="w-6 h-6 text-cyan-600 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">Overall Score</h3>
+                        <p className="text-sm text-slate-600 mt-1">Your total performance across all criteria</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-lg text-sm font-bold bg-cyan-100 text-cyan-700">
+                        Score: {detailedTotalScore}/{detailedMaxScore}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-cyan-50 to-blue-50 p-4 rounded-xl border-2 border-cyan-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-cyan-600" />
+                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
+                    </div>
+                    <div className="text-sm text-slate-800 leading-relaxed">
+                      {detailedOverallFeedback || `You scored ${detailedTotalScore} out of ${detailedMaxScore} points using the ${analyticsData.framework} framework. This score is based on your performance across all evaluated criteria including opening, discovery, objection handling, value proposition, and closing.`}
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <h4 className="text-sm font-bold text-slate-900">How to improve</h4>
+                    </div>
+                    <div className="text-sm text-slate-800">
+                      Review each criterion below to see specific areas where you can improve. Focus on the ones marked as "Needs Improvement" first.
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {selectedMetric === 'talk-percentage' && (
+                <>
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-200 mb-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <MessageSquare className="w-6 h-6 text-emerald-600 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">Talk Percentage</h3>
+                        <p className="text-sm text-slate-600 mt-1">How much you spoke during the call</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-lg text-sm font-bold bg-emerald-100 text-emerald-700">
+                        You: {analyticsData.userTalkPercentage}% | Bot: {analyticsData.botTalkPercentage}%
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-emerald-50 to-green-50 p-4 rounded-xl border-2 border-emerald-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-600" />
+                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
+                    </div>
+                    <div className="text-sm text-slate-800 leading-relaxed">
+                      {analyticsData.userTalkPercentage > 60
+                        ? `You dominated the conversation at ${analyticsData.userTalkPercentage}%. While it's important to be engaged, talking too much can prevent you from understanding the prospect's needs. The ideal range is 40-50%.`
+                        : analyticsData.userTalkPercentage < 35
+                        ? `You only spoke ${analyticsData.userTalkPercentage}% of the time. You should be more active in driving the conversation and asking discovery questions. Aim for 40-50%.`
+                        : `Your talk time of ${analyticsData.userTalkPercentage}% is well-balanced. This shows good listening skills while maintaining control of the conversation.`
+                      }
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <h4 className="text-sm font-bold text-slate-900">Best practices</h4>
+                    </div>
+                    <ol className="space-y-2">
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                        <span>Aim for 40-50% talk time in discovery calls</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                        <span>Ask open-ended questions and let prospects elaborate</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
+                        <span>Pause after key points to encourage dialogue</span>
+                      </li>
+                    </ol>
+                  </div>
+                </>
+              )}
+
+              {selectedMetric === 'sentiment' && (
+                <>
+                  <div className="bg-gradient-to-br from-violet-50 to-purple-50 p-4 rounded-xl border-2 border-violet-200 mb-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <TrendingUp className="w-6 h-6 text-violet-600 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">Sentiment Analysis</h3>
+                        <p className="text-sm text-slate-600 mt-1">The emotional tone of your conversation</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-3 py-1 rounded-lg text-sm font-bold ${userSentimentStyle.bg} ${userSentimentStyle.color}`}>
+                        {userSentimentStyle.label} ({(analyticsData.userSentiment * 100).toFixed(0)}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-violet-50 to-purple-50 p-4 rounded-xl border-2 border-violet-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-violet-600" />
+                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
+                    </div>
+                    <div className="text-sm text-slate-800 leading-relaxed">
+                      {analyticsData.userSentiment >= 0.6
+                        ? 'Your tone was positive and enthusiastic throughout the call. This helps build rapport and keeps prospects engaged.'
+                        : analyticsData.userSentiment >= 0.3
+                        ? 'Your tone was neutral during this call. Consider adding more energy and enthusiasm to better connect with prospects.'
+                        : 'Your tone appeared negative or uncertain. Work on maintaining a more positive, confident demeanor during calls.'
+                      }
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <h4 className="text-sm font-bold text-slate-900">Tips for better sentiment</h4>
+                    </div>
+                    <ol className="space-y-2">
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                        <span>Smile while talking - it comes through in your voice</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                        <span>Use positive language and affirmations</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
+                        <span>Match the prospect's energy level appropriately</span>
+                      </li>
+                    </ol>
+                  </div>
+                </>
+              )}
+
+              {selectedMetric === 'duration' && (
+                <>
+                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border-2 border-slate-200 mb-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <Clock className="w-6 h-6 text-slate-600 flex-shrink-0" />
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">Call Duration</h3>
+                        <p className="text-sm text-slate-600 mt-1">Total time spent on the call</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-lg text-sm font-bold bg-slate-100 text-slate-700">
+                        {analyticsData.duration}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-4 rounded-xl border-2 border-slate-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-slate-600" />
+                      <h4 className="text-sm font-bold text-slate-900">Analysis</h4>
+                    </div>
+                    <div className="text-sm text-slate-800 leading-relaxed">
+                      Your call lasted {analyticsData.duration}. For discovery calls, the ideal length is typically 15-30 minutes - long enough to uncover needs but short enough to respect the prospect's time.
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-xl border-2 border-blue-200 mb-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <Lightbulb className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                      <h4 className="text-sm font-bold text-slate-900">Time management tips</h4>
+                    </div>
+                    <ol className="space-y-2">
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                        <span>Set expectations at the start: "I have 20 minutes, does that work?"</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                        <span>Keep your agenda focused on 3-5 key discovery questions</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm text-slate-800">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</span>
+                        <span>If running long, summarize and schedule a follow-up</span>
+                      </li>
+                    </ol>
+                  </div>
+                </>
+              )}
+
+              <div className="border-t border-slate-200 pt-4">
+                <h3 className="text-lg font-bold text-slate-900 mb-4">Transcript</h3>
+                <div className="space-y-2">
+                  {analyticsData.conversationFlow.map((msg, i) => (
+                    <div
+                      key={i}
+                      id={`transcript-${msg.timestamp}`}
+                      className={`p-3 rounded-lg ${
+                        msg.speaker === 'user' ? 'bg-blue-50' : 'bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2 mb-1">
+                        <span className="text-xs font-mono text-slate-500">{msg.timestamp}</span>
+                        <span className={`text-xs font-semibold ${
+                          msg.speaker === 'user' ? 'text-blue-600' : 'text-slate-600'
+                        }`}>
+                          {msg.speaker === 'user' ? 'You' : bot.name}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-800">{msg.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : selectedCriteria && selectedScore ? (
             <div className="p-6">
               <div className={`p-4 rounded-xl border-2 mb-4 ${
                 selectedScore.passed ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
