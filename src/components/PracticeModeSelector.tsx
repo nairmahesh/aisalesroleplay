@@ -1,6 +1,6 @@
-import { Mic, Bot as BotIcon, Users } from 'lucide-react';
+import { Mic, Bot as BotIcon } from 'lucide-react';
 
-export type PracticeMode = 'ai_roleplay' | 'human_roleplay' | 'self_practice';
+export type PracticeMode = 'ai_roleplay' | 'self_practice';
 
 interface PracticeModeSelectorProps {
   selectedMode: PracticeMode;
@@ -15,7 +15,7 @@ export function PracticeModeSelector({ selectedMode, onSelectMode }: PracticeMod
         <p className="text-slate-600">Choose the practice mode that fits your learning style and available time</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <button
           onClick={() => onSelectMode('self_practice')}
           className={`group relative p-6 rounded-xl border-2 transition-all ${
@@ -74,34 +74,6 @@ export function PracticeModeSelector({ selectedMode, onSelectMode }: PracticeMod
           </div>
         </button>
 
-        <button
-          onClick={() => onSelectMode('human_roleplay')}
-          className={`group relative p-6 rounded-xl border-2 transition-all ${
-            selectedMode === 'human_roleplay'
-              ? 'border-emerald-500 bg-emerald-50 shadow-lg'
-              : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
-          }`}
-        >
-          <div className="flex flex-col items-center text-center space-y-3">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-              selectedMode === 'human_roleplay' ? 'bg-emerald-100' : 'bg-slate-100'
-            }`}>
-              <Users className={`w-8 h-8 ${
-                selectedMode === 'human_roleplay' ? 'text-emerald-600' : 'text-slate-600'
-              }`} />
-            </div>
-            <div>
-              <h4 className="font-bold text-lg text-slate-900 mb-1">Human Roleplay</h4>
-              <p className="text-sm text-slate-600 mb-3">
-                Practice with a colleague or manager playing the prospect
-              </p>
-              <div className="flex items-center justify-center gap-2 text-xs">
-                <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full font-medium">Realistic</span>
-                <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-full font-medium">Collaborative</span>
-              </div>
-            </div>
-          </div>
-        </button>
       </div>
     </div>
   );

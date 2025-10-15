@@ -52,9 +52,6 @@ export function StartCallModal({ onConfirm, onCancel }: StartCallModalProps) {
               {selectedMode === 'ai_roleplay' && (
                 "You'll be practicing with an AI version of the prospect. The bot may occasionally have response delays. Your call will be visible to other platform users in your organization."
               )}
-              {selectedMode === 'human_roleplay' && (
-                "You'll be practicing with a colleague or manager who will play the prospect role. Make sure your partner is ready before starting. Your call will be recorded and visible to others in your organization."
-              )}
               {selectedMode === 'self_practice' && (
                 "You'll record your pitch without real-time interaction. You can review and get feedback afterward. Your recording will be visible to other platform users in your organization."
               )}

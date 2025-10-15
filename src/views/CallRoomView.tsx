@@ -74,10 +74,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       setTimeout(() => {
         addMessage('bot', "Hello! This is " + bot.name + ". Thanks for reaching out. How can I help you today?", 'neutral');
       }, 1500);
-    } else if (practiceMode === 'human_roleplay') {
-      setTimeout(() => {
-        addMessage('bot', "[Waiting for human partner to respond...]", 'neutral');
-      }, 1000);
     }
   };
 
@@ -201,7 +197,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
           <div className="text-center">
             <h2 className="text-xl font-bold text-white">
               {practiceMode === 'ai_roleplay' && 'AI Roleplay'}
-              {practiceMode === 'human_roleplay' && 'Human Roleplay'}
               {practiceMode === 'self_practice' && 'Pitch Practice'}
             </h2>
             <p className="text-sm text-slate-400">{isCallActive ? formatDuration(callDuration) : 'Not started'}</p>
@@ -233,12 +228,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
                   <span className="px-3 py-1 bg-cyan-500 bg-opacity-20 text-cyan-300 text-xs font-medium rounded-full">
                     {bot.call_type}
                   </span>
-                  {practiceMode === 'human_roleplay' && (
-                    <span className="px-3 py-1 bg-emerald-500 bg-opacity-20 text-emerald-300 text-xs font-medium rounded-full flex items-center gap-1">
-                      <UsersIcon className="w-3 h-3" />
-                      Human
-                    </span>
-                  )}
                   {practiceMode === 'self_practice' && (
                     <span className="px-3 py-1 bg-blue-500 bg-opacity-20 text-blue-300 text-xs font-medium rounded-full">
                       Self-paced
@@ -305,12 +294,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
                         Simulate Speaking
                       </button>
                       <p className="text-xs text-slate-400 mt-2">Demo: Click to add messages to transcript</p>
-                    </div>
-                  )}
-                  {practiceMode === 'human_roleplay' && (
-                    <div className="text-center">
-                      <p className="text-sm text-slate-300">Speak naturally with your partner</p>
-                      <p className="text-xs text-slate-400 mt-2">Conversation is being recorded</p>
                     </div>
                   )}
                   {practiceMode === 'self_practice' && (
