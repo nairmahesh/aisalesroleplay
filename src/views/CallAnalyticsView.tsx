@@ -1,4 +1,4 @@
-import { ArrowLeft, Users, Award, TrendingUp, MessageCircle, ChevronRight, CheckCircle, XCircle, Play } from 'lucide-react';
+import { ArrowLeft, Users, Award, TrendingUp, MessageCircle, ChevronRight, CheckCircle, XCircle, Play, Clock, Target, ThumbsUp, AlertCircle } from 'lucide-react';
 import { Bot } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
@@ -42,6 +42,23 @@ interface TranscriptMessage {
   text: string;
 }
 
+interface CallAnalytics {
+  user_talk_percentage: number;
+  bot_talk_percentage: number;
+  user_sentiment_score: number;
+  bot_sentiment_score: number;
+  evaluation_framework: string;
+  framework_score: number;
+  budget_identified: boolean;
+  authority_identified: boolean;
+  need_identified: boolean;
+  timeline_identified: boolean;
+  key_points: string[];
+  strengths: string[];
+  improvements: string[];
+  overall_feedback: string;
+}
+
 export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewProps) {
   const [activeTab, setActiveTab] = useState<'participants' | 'scorecard' | 'analytics' | 'feedback' | 'objections'>('scorecard');
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<string | null>(null);
@@ -51,6 +68,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
   const [detailedMaxScore, setDetailedMaxScore] = useState<number>(100);
   const [loading, setLoading] = useState(true);
   const [highlightedTimestamp, setHighlightedTimestamp] = useState<string | null>(null);
+  const [analytics, setAnalytics] = useState<CallAnalytics | null>(null);
 
   useEffect(() => {
     loadScoringData();
@@ -86,6 +104,22 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
         console.log('Loaded analytics:', analyticsData);
         setDetailedTotalScore(analyticsData.total_score || 0);
         setDetailedMaxScore(analyticsData.max_score || 100);
+        setAnalytics({
+          user_talk_percentage: parseFloat(analyticsData.user_talk_percentage || '0'),
+          bot_talk_percentage: parseFloat(analyticsData.bot_talk_percentage || '0'),
+          user_sentiment_score: parseFloat(analyticsData.user_sentiment_score || '0'),
+          bot_sentiment_score: parseFloat(analyticsData.bot_sentiment_score || '0'),
+          evaluation_framework: analyticsData.evaluation_framework || '',
+          framework_score: parseFloat(analyticsData.framework_score || '0'),
+          budget_identified: analyticsData.budget_identified || false,
+          authority_identified: analyticsData.authority_identified || false,
+          need_identified: analyticsData.need_identified || false,
+          timeline_identified: analyticsData.timeline_identified || false,
+          key_points: analyticsData.key_points || [],
+          strengths: analyticsData.strengths || [],
+          improvements: analyticsData.improvements || [],
+          overall_feedback: analyticsData.overall_feedback || '',
+        });
       }
 
       setLoading(false);
@@ -516,10 +550,196 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
             </div>
           )}
 
-          {activeTab === 'analytics' && (
+          {activeTab === 'analytics' && analytics && (
             <div className="p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">Call Analytics</h2>
-              <p className="text-slate-600">Analytics view coming soon...</p>
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Call Analytics</h2>
+              <p className="text-sm text-slate-600 mb-6">In-depth analysis of your call performance</p>
+
+              <div className="space-y-6">
+                <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg p-6 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Target className="w-5 h-5 text-blue-600" />
+                    <h3 className="text-sm font-bold text-slate-900">Overall Assessment</h3>
+                  </div>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {analytics.overall_feedback}
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Your Talk Time</span>
+                      <MessageCircle className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900 mb-1">{analytics.user_talk_percentage}%</div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all"
+                        style={{ width: `${analytics.user_talk_percentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Prospect Talk Time</span>
+                      <MessageCircle className="w-4 h-4 text-slate-600" />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900 mb-1">{analytics.bot_talk_percentage}%</div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div
+                        className="bg-slate-600 h-2 rounded-full transition-all"
+                        style={{ width: `${analytics.bot_talk_percentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Your Sentiment</span>
+                      <ThumbsUp className="w-4 h-4 text-green-600" />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{(analytics.user_sentiment_score * 100).toFixed(0)}%</div>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Prospect Sentiment</span>
+                      <ThumbsUp className="w-4 h-4 text-orange-600" />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-900">{(analytics.bot_sentiment_score * 100).toFixed(0)}%</div>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-lg p-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Award className="w-5 h-5 text-slate-700" />
+                    <h3 className="text-sm font-bold text-slate-900">{analytics.evaluation_framework} Framework Score</h3>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-4xl font-bold text-slate-900">{analytics.framework_score}<span className="text-xl text-slate-500">/100</span></div>
+                    <div className="flex-1">
+                      <div className="w-full bg-slate-200 rounded-full h-3">
+                        <div
+                          className={`h-3 rounded-full transition-all ${
+                            analytics.framework_score >= 80 ? 'bg-green-600' :
+                            analytics.framework_score >= 60 ? 'bg-yellow-600' : 'bg-red-600'
+                          }`}
+                          style={{ width: `${analytics.framework_score}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6">
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                      analytics.budget_identified ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    }`}>
+                      {analytics.budget_identified ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      )}
+                      <span className={`text-xs font-medium ${
+                        analytics.budget_identified ? 'text-green-700' : 'text-red-700'
+                      }`}>Budget</span>
+                    </div>
+
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                      analytics.authority_identified ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    }`}>
+                      {analytics.authority_identified ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      )}
+                      <span className={`text-xs font-medium ${
+                        analytics.authority_identified ? 'text-green-700' : 'text-red-700'
+                      }`}>Authority</span>
+                    </div>
+
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                      analytics.need_identified ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    }`}>
+                      {analytics.need_identified ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      )}
+                      <span className={`text-xs font-medium ${
+                        analytics.need_identified ? 'text-green-700' : 'text-red-700'
+                      }`}>Need</span>
+                    </div>
+
+                    <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                      analytics.timeline_identified ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                    }`}>
+                      {analytics.timeline_identified ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+                      )}
+                      <span className={`text-xs font-medium ${
+                        analytics.timeline_identified ? 'text-green-700' : 'text-red-700'
+                      }`}>Timeline</span>
+                    </div>
+                  </div>
+                </div>
+
+                {analytics.key_points && analytics.key_points.length > 0 && (
+                  <div className="border border-slate-200 rounded-lg p-6">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Target className="w-5 h-5 text-slate-700" />
+                      <h3 className="text-sm font-bold text-slate-900">Key Discussion Points</h3>
+                    </div>
+                    <ul className="space-y-2">
+                      {analytics.key_points.map((point, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
+                          <span className="text-blue-600 flex-shrink-0 mt-1">•</span>
+                          <span>{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {analytics.strengths && analytics.strengths.length > 0 && (
+                    <div className="border border-green-200 bg-green-50 rounded-lg p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <ThumbsUp className="w-5 h-5 text-green-700" />
+                        <h3 className="text-sm font-bold text-green-900">What Went Well</h3>
+                      </div>
+                      <ul className="space-y-2">
+                        {analytics.strengths.map((strength, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-green-800">
+                            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                            <span>{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {analytics.improvements && analytics.improvements.length > 0 && (
+                    <div className="border border-orange-200 bg-orange-50 rounded-lg p-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <AlertCircle className="w-5 h-5 text-orange-700" />
+                        <h3 className="text-sm font-bold text-orange-900">Areas for Improvement</h3>
+                      </div>
+                      <ul className="space-y-2">
+                        {analytics.improvements.map((improvement, idx) => (
+                          <li key={idx} className="flex items-start gap-2 text-sm text-orange-800">
+                            <span className="text-orange-600 flex-shrink-0 mt-1">→</span>
+                            <span>{improvement}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
