@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronRight, X, Lightbulb, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 
 export interface ScoringCriteria {
@@ -168,51 +168,139 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
       </div>
 
       {selectedCriteria && selectedScore && (
-        <div className="bg-white rounded-xl border-2 border-cyan-200 p-6 shadow-lg">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              {selectedScore.passed ? (
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              ) : (
-                <XCircle className="w-8 h-8 text-red-600" />
-              )}
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">{selectedCriteria.name}</h3>
-                <p className="text-sm text-slate-600">{selectedCriteria.description}</p>
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-8">
+            <div className={`p-6 border-b-4 ${
+              selectedScore.passed ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
+            }`}>
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-4 flex-1">
+                  {selectedScore.passed ? (
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <CheckCircle className="w-7 h-7 text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                      <XCircle className="w-7 h-7 text-red-600" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">{selectedCriteria.name}</h3>
+                    <p className="text-slate-700">{selectedCriteria.description}</p>
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className={`inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold ${
+                        selectedScore.passed
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        Score: {selectedScore.score}/{selectedCriteria.max_score}
+                      </span>
+                      <span className={`inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold ${
+                        selectedScore.passed
+                          ? 'bg-green-600 text-white'
+                          : 'bg-red-600 text-white'
+                      }`}>
+                        {selectedScore.passed ? 'Passed' : 'Needs Improvement'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSelectedCriteriaId(null)}
+                  className="flex-shrink-0 p-2 hover:bg-white/50 rounded-lg transition-colors"
+                >
+                  <X className="w-6 h-6 text-slate-600" />
+                </button>
               </div>
             </div>
-            <button
-              onClick={() => setSelectedCriteriaId(null)}
-              className="text-slate-500 hover:text-slate-700 font-medium"
-            >
-              Close
-            </button>
-          </div>
 
-          <div className={`p-5 rounded-lg border-2 mb-4 ${
-            selectedScore.passed
-              ? 'border-green-300 bg-green-50'
-              : 'border-red-300 bg-red-50'
-          }`}>
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="font-semibold text-slate-900">Score</h4>
-              <span className={`text-2xl font-bold ${
-                selectedScore.passed ? 'text-green-700' : 'text-red-700'
+            <div className="p-8 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className={`p-6 rounded-xl border-2 ${
+                selectedScore.passed
+                  ? 'border-green-200 bg-green-50'
+                  : 'border-red-200 bg-red-50'
               }`}>
-                {selectedScore.score}/{selectedCriteria.max_score}
-              </span>
-            </div>
-            <h4 className="font-semibold text-slate-900 mb-2">Why were you scored this way?</h4>
-            <p className="text-sm text-slate-700 leading-relaxed">{selectedScore.feedback}</p>
-          </div>
+                <div className="flex items-start gap-3 mb-4">
+                  <AlertCircle className={`w-6 h-6 mt-1 ${
+                    selectedScore.passed ? 'text-green-600' : 'text-red-600'
+                  }`} />
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-900 mb-3">Why were you scored this way?</h4>
+                    <div className="text-slate-800 leading-relaxed space-y-3">
+                      {selectedScore.feedback.split('\n\n').map((paragraph, idx) => (
+                        <p key={idx}>{paragraph}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-          <div className="bg-slate-50 p-5 rounded-lg border border-slate-200">
-            <h4 className="font-semibold text-slate-900 mb-2">What could you do differently next time?</h4>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              {selectedScore.passed
-                ? 'Excellent work on this criteria! Continue to apply this approach in your future calls to maintain consistency.'
-                : `Focus on ${selectedCriteria.name.toLowerCase()} by being more intentional and asking targeted questions. Review the feedback above and practice this specific skill in your next roleplay session.`}
-            </p>
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-xl border-2 border-blue-200">
+                <div className="flex items-start gap-3">
+                  <Lightbulb className="w-6 h-6 text-blue-600 mt-1" />
+                  <div>
+                    <h4 className="text-lg font-bold text-slate-900 mb-3">What could you do differently next time?</h4>
+                    {selectedScore.passed ? (
+                      <div className="text-slate-800 leading-relaxed space-y-3">
+                        <p className="font-medium">Excellent work on this criteria! Here's how to maintain this standard:</p>
+                        <ul className="list-disc list-inside space-y-2 ml-2">
+                          <li>Continue applying this approach consistently in all your calls</li>
+                          <li>Use this as a reference point for training team members</li>
+                          <li>Document what worked well for future preparation</li>
+                          <li>Look for opportunities to refine and optimize this skill further</li>
+                        </ul>
+                      </div>
+                    ) : (
+                      <div className="text-slate-800 leading-relaxed space-y-3">
+                        <p className="font-medium">Here are specific steps to improve:</p>
+                        <ol className="list-decimal list-inside space-y-2 ml-2">
+                          <li>Review the detailed feedback above and identify the key gap</li>
+                          <li>Practice {selectedCriteria.name.toLowerCase()} in your next roleplay session with specific focus on this area</li>
+                          <li>Prepare specific questions or talking points related to this criterion before calls</li>
+                          <li>Ask for feedback from peers or managers specifically on this skill</li>
+                          <li>Watch recordings of successful calls that demonstrate this criterion well</li>
+                        </ol>
+                        <div className="mt-4 p-4 bg-white rounded-lg border border-blue-300">
+                          <p className="font-semibold text-blue-900 mb-2">Key Focus Area:</p>
+                          <p className="text-slate-700">
+                            {selectedCriteria.description}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {!selectedScore.passed && (
+                <div className="bg-amber-50 p-6 rounded-xl border-2 border-amber-200">
+                  <h4 className="text-lg font-bold text-amber-900 mb-3">Pro Tips</h4>
+                  <ul className="space-y-2 text-slate-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold">•</span>
+                      <span>Record yourself practicing and review the recording to identify specific moments where you could have applied this technique</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold">•</span>
+                      <span>Create a checklist of key points for this criterion and keep it visible during practice calls</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-600 font-bold">•</span>
+                      <span>Schedule dedicated practice time focusing exclusively on improving this one skill</span>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button
+                onClick={() => setSelectedCriteriaId(null)}
+                className="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-lg transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
