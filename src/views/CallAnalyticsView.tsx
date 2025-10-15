@@ -301,7 +301,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
       </div>
 
       {/* Right Side - Tabs and Content */}
-      <div className="w-[600px] flex flex-col">
+      <div className="w-[550px] flex flex-col">
         {/* Tabs */}
         <div className="border-b border-slate-200">
           <div className="flex">
