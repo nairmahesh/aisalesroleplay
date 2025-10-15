@@ -745,190 +745,106 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
             </div>
           )}
 
-          {activeTab === 'feedback' && !selectedCriteriaId && (
-            <div className="p-6">
-              <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl font-bold">
+          {activeTab === 'feedback' && (
+            <div className="p-6 space-y-6">
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-start gap-4 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-bold flex-shrink-0">
                     {detailedTotalScore}
                   </div>
-                  <div>
-                    <p className="text-sm text-slate-600">Just the beginning, you'll get there!</p>
-                    <h2 className="text-lg font-bold text-slate-900">
-                      You got {detailedTotalScore}/{detailedMaxScore} criteria correct.
+                  <div className="flex-1">
+                    <h2 className="text-xl font-bold text-slate-900 mb-2">
+                      Overall Performance
                     </h2>
-                  </div>
-                </div>
-                <p className="text-sm text-slate-600 mt-3">
-                  For this call, the scorecard is the best resource to understand what went right and what went wrong. Dive into each criteria to check out detailed feedback.
-                </p>
-              </div>
-
-              <div className="border-b border-slate-200 mb-6">
-                <h3 className="text-sm font-bold text-slate-900 mb-4">Scorecard</h3>
-              </div>
-
-              <div className="space-y-6">
-                {Object.entries(groupedCriteria).map(([category, criteria]) => {
-                  const categoryScore = getCategoryScore(category);
-                  return (
-                    <div key={category}>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                          {category}
-                        </h3>
-                        <span className="text-xs font-semibold text-slate-600">
-                          {categoryScore.total}/{categoryScore.max}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2">
-                        {criteria.map((criterion) => {
-                          const score = getScoreForCriteria(criterion.id);
-                          const isPassed = score?.passed || false;
-
-                          return (
-                            <button
-                              key={criterion.id}
-                              onClick={() => setSelectedCriteriaId(criterion.id)}
-                              className="w-full flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all text-left group"
-                            >
-                              <div className="flex items-center gap-3 flex-1">
-                                {isPassed ? (
-                                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                                ) : (
-                                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-                                )}
-                                <span className="text-sm font-medium text-slate-900">
-                                  {category.toUpperCase()} – {criterion.name}
-                                </span>
-                              </div>
-                              <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'feedback' && selectedCriteriaId && selectedCriteria && selectedScore && (
-            <div className="flex flex-col h-full">
-              <div className="p-6 border-b border-slate-200">
-                <button
-                  onClick={() => setSelectedCriteriaId(null)}
-                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  View full scorecard
-                </button>
-
-                <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1">
-                  {scoringCriteria.map((criterion) => {
-                    const score = getScoreForCriteria(criterion.id);
-                    const isPassed = score?.passed || false;
-                    const isSelected = criterion.id === selectedCriteriaId;
-
-                    return (
-                      <button
-                        key={criterion.id}
-                        onClick={() => setSelectedCriteriaId(criterion.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 ${
-                          isSelected
-                            ? isPassed
-                              ? 'bg-green-100 text-green-700 ring-2 ring-green-600'
-                              : 'bg-red-100 text-red-700 ring-2 ring-red-600'
-                            : isPassed
-                            ? 'bg-green-50 text-green-700 hover:bg-green-100'
-                            : 'bg-red-50 text-red-700 hover:bg-red-100'
-                        }`}
-                      >
-                        {isPassed ? (
-                          <CheckCircle className="w-4 h-4" />
-                        ) : (
-                          <XCircle className="w-4 h-4" />
-                        )}
-                        {criterion.category.toUpperCase()} – {criterion.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-6">
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-slate-900 mb-2">
-                    {selectedCriteria.category.toLowerCase().replace(/^\w/, c => c.toUpperCase())} - {selectedCriteria.name}
-                  </h2>
-                  <p className="text-xs text-slate-600 uppercase tracking-wide font-semibold">
-                    {selectedCriteria.category.toUpperCase()}
-                  </p>
-                </div>
-
-                <div className="space-y-6">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-6 h-6 rounded bg-blue-100 flex items-center justify-center">
-                        <span className="text-xs font-bold text-blue-600">AI</span>
-                      </div>
-                      <h3 className="text-sm font-bold text-slate-900">
-                        Why were you scored this way?
-                      </h3>
-                    </div>
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                      {selectedScore.feedback}
+                    <p className="text-slate-700 leading-relaxed">
+                      {analytics.overall_feedback || "You scored " + detailedTotalScore + " out of " + detailedMaxScore + " points on this call. Review the detailed feedback below to understand your strengths and areas for improvement."}
                     </p>
                   </div>
-
-                  {selectedScore.transcript_references && selectedScore.transcript_references.length > 0 && (
-                    <div>
-                      <ol className="space-y-4">
-                        {selectedScore.transcript_references.map((ref, idx) => (
-                          <li key={idx} className="flex items-start gap-3">
-                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-slate-700 text-white text-xs font-bold flex items-center justify-center mt-0.5">
-                              {idx + 1}
-                            </span>
-                            <div className="flex-1">
-                              <p className="text-sm text-slate-700 mb-2">
-                                {ref.text.split(':')[0]}:{' '}
-                                <button
-                                  onClick={() => handleTimestampClick(ref.timestamp)}
-                                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-mono text-xs"
-                                >
-                                  <Play className="w-3 h-3" />
-                                  ({ref.timestamp})
-                                </button>{' '}
-                                "{ref.text.split(':').slice(1).join(':').trim()}"
-                              </p>
-                            </div>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
-
-                  {!selectedScore.passed && selectedScore.improvement_examples && selectedScore.improvement_examples.length > 0 && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
-                      <h3 className="text-sm font-bold text-slate-900 mb-3">
-                        What could you do differently next time?
-                      </h3>
-                      <ul className="space-y-2">
-                        {selectedScore.improvement_examples.map((example, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-sm text-slate-700">
-                            <span className="text-blue-600 flex-shrink-0">•</span>
-                            <span>{example}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
                 </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
+                    <ThumbsUp className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">What Went Well</h3>
+                </div>
+                <ul className="space-y-3">
+                  {callScores.filter(s => s.passed).slice(0, 5).map((score, idx) => {
+                    const criterion = scoringCriteria.find(c => c.id === score.criteria_id);
+                    return (
+                      <li key={idx} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-900">{criterion?.name}</p>
+                          <p className="text-sm text-slate-700 mt-1">{score.feedback.split('\n')[0]}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-amber-600 flex items-center justify-center">
+                    <AlertCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Areas for Improvement</h3>
+                </div>
+                <ul className="space-y-3">
+                  {callScores.filter(s => !s.passed).slice(0, 5).map((score, idx) => {
+                    const criterion = scoringCriteria.find(c => c.id === score.criteria_id);
+                    return (
+                      <li key={idx} className="flex items-start gap-3">
+                        <XCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-900">{criterion?.name}</p>
+                          <p className="text-sm text-slate-700 mt-1">{score.feedback.split('\n')[0]}</p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center">
+                    <Lightbulb className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Key Takeaways</h3>
+                </div>
+                <ul className="space-y-2 text-slate-700">
+                  {analytics.key_improvements && analytics.key_improvements.length > 0 ? (
+                    analytics.key_improvements.map((improvement: string, idx: number) => (
+                      <li key={idx} className="flex items-start gap-2 text-sm">
+                        <span className="text-slate-400 flex-shrink-0">•</span>
+                        <span>{improvement}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="text-slate-400 flex-shrink-0">•</span>
+                        <span>Review the Scorecard tab for detailed criteria-by-criteria feedback</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="text-slate-400 flex-shrink-0">•</span>
+                        <span>Focus on mastering one improvement area at a time</span>
+                      </li>
+                      <li className="flex items-start gap-2 text-sm">
+                        <span className="text-slate-400 flex-shrink-0">•</span>
+                        <span>Practice regularly to build muscle memory for successful techniques</span>
+                      </li>
+                    </>
+                  )}
+                </ul>
               </div>
             </div>
           )}
+
 
           {activeTab === 'objections' && (
             <div className="p-6">
