@@ -62,18 +62,11 @@ export function HumanToHumanView() {
 
   async function createRoom(formData: RoomFormData) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        alert('You must be logged in to create a room');
-        return;
-      }
-
       const roomCode = await generateRoomCode();
       let externalToken = null;
 
       if (formData.allow_external) {
-        const { data } = await supabase.rpc('generate_external_invite_token');
-        externalToken = data || generateFallbackToken();
+        externalToken = generateFallbackToken();
         console.log('External invite enabled, token:', externalToken);
       }
 
@@ -85,7 +78,7 @@ export function HumanToHumanView() {
           {
             name: formData.name,
             room_code: roomCode,
-            created_by: user.id,
+            created_by: null,
             rep_name: formData.rep_name,
             client_name: formData.client_name,
             client_company: formData.client_company,
