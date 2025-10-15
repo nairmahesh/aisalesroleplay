@@ -21,22 +21,85 @@ export function CallHistoryView() {
   const [selectedCall, setSelectedCall] = useState<CallRecord | null>(null);
   const [viewingAnalytics, setViewingAnalytics] = useState(false);
   const [bots, setBots] = useState<Bot[]>([]);
+  const [callHistory, setCallHistory] = useState<CallRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBots();
+    fetchData();
   }, []);
 
-  async function fetchBots() {
+  async function fetchData() {
     try {
-      const { data, error } = await supabase
+      const { data: botsData, error: botsError } = await supabase
         .from('bots')
         .select('*');
 
-      if (error) throw error;
-      setBots(data || []);
+      if (botsError) throw botsError;
+      setBots(botsData || []);
+
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('call_sessions')
+        .select(`
+          id,
+          started_at,
+          duration_seconds,
+          status,
+          bots (
+            name,
+            avatar_initials,
+            avatar_color,
+            call_type
+          ),
+          call_analytics (
+            total_score,
+            user_sentiment_score,
+            user_talk_percentage,
+            evaluation_framework
+          )
+        `)
+        .eq('status', 'completed')
+        .order('started_at', { ascending: false });
+
+      if (sessionsError) throw sessionsError;
+
+      const formattedHistory: CallRecord[] = (sessionsData || []).map((session: any) => {
+        const bot = session.bots;
+        const analytics = session.call_analytics;
+        const sentimentScore = analytics?.user_sentiment_score || 0;
+
+        return {
+          id: session.id,
+          botName: bot?.name || 'Unknown',
+          botInitials: bot?.avatar_initials || '??',
+          botColor: bot?.avatar_color || '#6366F1',
+          date: new Date(session.started_at).toISOString().split('T')[0],
+          duration: formatDuration(session.duration_seconds || 0),
+          callType: bot?.call_type || 'Unknown',
+          framework: analytics?.evaluation_framework || 'BANT',
+          score: analytics?.total_score || 0,
+          sentiment: getSentimentLabel(sentimentScore),
+          talkRatio: analytics?.user_talk_percentage || 50,
+        };
+      });
+
+      setCallHistory(formattedHistory);
+      setLoading(false);
     } catch (error) {
-      console.error('Error fetching bots:', error);
+      console.error('Error fetching data:', error);
+      setLoading(false);
     }
+  }
+
+  function formatDuration(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  }
+
+  function getSentimentLabel(score: number): 'Positive' | 'Neutral' | 'Negative' {
+    if (score >= 0.6) return 'Positive';
+    if (score >= 0.3) return 'Neutral';
+    return 'Negative';
   }
 
   function viewAnalytics(call: CallRecord) {
@@ -49,79 +112,19 @@ export function CallHistoryView() {
     setSelectedCall(null);
   }
 
-  const callHistory: CallRecord[] = [
-    {
-      id: '1',
-      botName: 'Marcus Johnson',
-      botInitials: 'MJ',
-      botColor: '#6366F1',
-      date: '2025-10-14',
-      duration: '12:34',
-      callType: 'Cold Call',
-      framework: 'BANT',
-      score: 82,
-      sentiment: 'Positive',
-      talkRatio: 45,
-    },
-    {
-      id: '2',
-      botName: 'Sarah Chen',
-      botInitials: 'SC',
-      botColor: '#8B5CF6',
-      date: '2025-10-13',
-      duration: '15:22',
-      callType: 'Discovery Call',
-      framework: 'MEDDIC',
-      score: 75,
-      sentiment: 'Neutral',
-      talkRatio: 52,
-    },
-    {
-      id: '3',
-      botName: 'Emma Thompson',
-      botInitials: 'ET',
-      botColor: '#6366F1',
-      date: '2025-10-12',
-      duration: '18:45',
-      callType: 'Warm Call',
-      framework: 'SPIN',
-      score: 88,
-      sentiment: 'Positive',
-      talkRatio: 40,
-    },
-    {
-      id: '4',
-      botName: 'David Kim',
-      botInitials: 'DK',
-      botColor: '#6366F1',
-      date: '2025-10-11',
-      duration: '10:15',
-      callType: 'Negotiation',
-      framework: 'BANT',
-      score: 68,
-      sentiment: 'Neutral',
-      talkRatio: 58,
-    },
-    {
-      id: '5',
-      botName: 'Isabella Rodriguez',
-      botInitials: 'IR',
-      botColor: '#8B5CF6',
-      date: '2025-10-10',
-      duration: '14:30',
-      callType: 'Renewal Call',
-      framework: 'MEDDPICC',
-      score: 91,
-      sentiment: 'Positive',
-      talkRatio: 42,
-    },
-  ];
-
   if (viewingAnalytics && selectedCall) {
     const bot = bots.find(b => b.name === selectedCall.botName);
     if (bot) {
       return <CallAnalyticsView sessionId={selectedCall.id} bot={bot} onBack={closeAnalytics} />;
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-slate-600">Loading call history...</div>
+      </div>
+    );
   }
 
   return (
@@ -131,9 +134,14 @@ export function CallHistoryView() {
         <p className="text-slate-600">Review your past roleplay sessions and analytics</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+      {callHistory.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <p className="text-slate-600 mb-4">No call history yet. Start practicing to see your performance analytics!</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-semibold text-slate-700">Bot</th>
@@ -221,6 +229,7 @@ export function CallHistoryView() {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }
