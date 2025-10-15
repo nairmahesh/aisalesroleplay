@@ -847,9 +847,144 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
 
 
           {activeTab === 'objections' && (
-            <div className="p-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">Objections</h2>
-              <p className="text-slate-600">Objections view coming soon...</p>
+            <div className="p-6 space-y-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900 mb-2">Objections Handled</h2>
+                <p className="text-sm text-slate-600">
+                  Track how objections were identified and addressed during the call
+                </p>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900">3 Objections Detected</h3>
+                    <p className="text-sm text-slate-600">2 handled successfully, 1 needs improvement</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-green-50 border-b border-green-200 p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-slate-900">Price Objection</h4>
+                          <p className="text-xs text-slate-600 uppercase tracking-wide font-semibold mt-1">
+                            Successfully Handled
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-700 mb-4">
+                      "Your pricing seems higher than competitors I've looked at."
+                    </p>
+                    <button
+                      onClick={() => handleTimestampClick('12:34')}
+                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      <Play className="w-4 h-4" />
+                      Jump to timestamp (12:34)
+                    </button>
+                  </div>
+                  <div className="p-4 bg-white">
+                    <h5 className="text-sm font-bold text-slate-900 mb-2">Your Response:</h5>
+                    <p className="text-sm text-slate-700 mb-3">
+                      "I understand price is a concern. What we've found is that our customers save an average of 30% on operational costs within the first year, which more than makes up for the initial investment. Would you like to see a detailed ROI breakdown specific to your use case?"
+                    </p>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm text-green-800">
+                        <span className="font-semibold">Why this worked:</span> You acknowledged the concern, provided specific value data, and offered a concrete next step.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-green-50 border-b border-green-200 p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-slate-900">Timing Objection</h4>
+                          <p className="text-xs text-slate-600 uppercase tracking-wide font-semibold mt-1">
+                            Successfully Handled
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-700 mb-4">
+                      "We're not ready to make a decision right now. Can we revisit this in a few months?"
+                    </p>
+                    <button
+                      onClick={() => handleTimestampClick('18:52')}
+                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      <Play className="w-4 h-4" />
+                      Jump to timestamp (18:52)
+                    </button>
+                  </div>
+                  <div className="p-4 bg-white">
+                    <h5 className="text-sm font-bold text-slate-900 mb-2">Your Response:</h5>
+                    <p className="text-sm text-slate-700 mb-3">
+                      "I appreciate your candor. Can you help me understand what needs to happen in the next few months before you'd be ready? That way, I can make sure we're aligned when the time is right."
+                    </p>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm text-green-800">
+                        <span className="font-semibold">Why this worked:</span> You didn't push back, instead you asked a clarifying question to understand their timeline and maintain engagement.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden">
+                  <div className="bg-amber-50 border-b border-amber-200 p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <XCircle className="w-6 h-6 text-amber-600 flex-shrink-0" />
+                        <div>
+                          <h4 className="font-bold text-slate-900">Authority Objection</h4>
+                          <p className="text-xs text-slate-600 uppercase tracking-wide font-semibold mt-1">
+                            Needs Improvement
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-700 mb-4">
+                      "I need to run this by my team before we can move forward."
+                    </p>
+                    <button
+                      onClick={() => handleTimestampClick('24:15')}
+                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      <Play className="w-4 h-4" />
+                      Jump to timestamp (24:15)
+                    </button>
+                  </div>
+                  <div className="p-4 bg-white">
+                    <h5 className="text-sm font-bold text-slate-900 mb-2">Your Response:</h5>
+                    <p className="text-sm text-slate-700 mb-3">
+                      "Sure, no problem. Let me know when you've had a chance to discuss it."
+                    </p>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                      <p className="text-sm text-amber-800">
+                        <span className="font-semibold">What could be improved:</span> You missed an opportunity to understand the decision-making process and offer to help facilitate the internal conversation.
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <h6 className="text-sm font-bold text-slate-900 mb-2">Better approach:</h6>
+                      <p className="text-sm text-slate-700">
+                        "Absolutely, that makes sense. Can I ask who else will be involved in that conversation? I'd be happy to put together some materials that might help you present this to your team, or even join the call if that would be helpful."
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
