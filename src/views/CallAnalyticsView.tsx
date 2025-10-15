@@ -1,4 +1,4 @@
-import { ArrowLeft, Users, Award, TrendingUp, MessageCircle, ChevronRight, CheckCircle, XCircle, Play, Clock, Target, ThumbsUp, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Users, Award, TrendingUp, MessageCircle, ChevronRight, CheckCircle, XCircle, Play, Clock, Target, ThumbsUp, AlertCircle, Lightbulb } from 'lucide-react';
 import { Bot } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
