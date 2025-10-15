@@ -3,7 +3,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { DashboardView } from './views/DashboardView';
-import { SelfPracticeView } from './views/SelfPracticeView';
 import { AIRoleplayView } from './views/AIRoleplayView';
 import { HumanToHumanView } from './views/HumanToHumanView';
 import { CallHistoryView } from './views/CallHistoryView';
@@ -20,8 +19,6 @@ function App() {
       switch (activeView) {
         case 'dashboard':
           return <DashboardView />;
-        case 'self-practice':
-          return <SelfPracticeView />;
         case 'ai-roleplay':
           return <AIRoleplayView />;
         case 'human-roleplay':

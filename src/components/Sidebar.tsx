@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, MessageSquare, FileText, Settings, ChevronDown, ChevronRight, Mic, Bot, UsersRound } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, FileText, Settings, ChevronDown, ChevronRight, Bot, UsersRound } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
 
@@ -19,14 +19,13 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
   ];
 
   const pitchPracticeSubmenu = [
-    { id: 'self-practice', label: 'Self Practice', icon: Mic },
     { id: 'ai-roleplay', label: 'AI Role Play', icon: Bot },
     { id: 'human-roleplay', label: 'Human to Human', icon: UsersRound },
   ];
 
   const visibleItems = menuItems.filter(item => item.roles.includes(currentRole));
 
-  const isPitchPracticeActive = ['self-practice', 'ai-roleplay', 'human-roleplay'].includes(activeView);
+  const isPitchPracticeActive = ['ai-roleplay', 'human-roleplay'].includes(activeView);
 
   return (
     <aside className="w-64 bg-slate-900 border-r border-slate-800 min-h-[calc(100vh-73px)]">
