@@ -1,4 +1,4 @@
-import { ArrowLeft, TrendingUp, MessageSquare, Clock, Award, CheckCircle, XCircle, AlertTriangle, PlayCircle } from 'lucide-react';
+import { ArrowLeft, TrendingUp, MessageSquare, Clock, Award, CheckCircle, XCircle, AlertTriangle, PlayCircle, X, Lightbulb, AlertCircle } from 'lucide-react';
 import { Bot } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
@@ -20,6 +20,7 @@ interface FrameworkCriterion {
 
 export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewProps) {
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(null);
+  const [selectedCriteriaId, setSelectedCriteriaId] = useState<string | null>(null);
   const [scoringCriteria, setScoringCriteria] = useState<ScoringCriteria[]>([]);
   const [callScores, setCallScores] = useState<CallScore[]>([]);
   const [detailedTotalScore, setDetailedTotalScore] = useState<number>(0);
@@ -347,16 +348,179 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
       </div>
 
       {scoringCriteria.length > 0 && callScores.length > 0 && (
-        <DetailedScoreCard
-          totalScore={detailedTotalScore}
-          maxScore={detailedMaxScore}
-          criteria={scoringCriteria}
-          scores={callScores}
-          overallFeedback={detailedOverallFeedback}
-          onCriterionClick={jumpToTimestamp}
-          transcript={analyticsData.conversationFlow}
-          botName={bot.name}
-        />
+        <>
+          <DetailedScoreCard
+            totalScore={detailedTotalScore}
+            maxScore={detailedMaxScore}
+            criteria={scoringCriteria}
+            scores={callScores}
+            overallFeedback={detailedOverallFeedback}
+            onCriterionClick={jumpToTimestamp}
+            transcript={analyticsData.conversationFlow}
+            botName={bot.name}
+          />
+
+          {selectedCriteriaId && (() => {
+            const selectedCriteria = scoringCriteria.find(c => c.id === selectedCriteriaId);
+            const selectedScore = callScores.find(s => s.criteria_id === selectedCriteriaId);
+
+            if (!selectedCriteria || !selectedScore) return null;
+
+            return (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl max-w-7xl w-full h-[90vh] flex flex-col">
+                  <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white flex-shrink-0">
+                    <div>
+                      <h2 className="text-2xl font-bold text-slate-900">{selectedCriteria.name}</h2>
+                      <p className="text-slate-600">{selectedCriteria.description}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedCriteriaId(null)}
+                      className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-700"
+                    >
+                      <X className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  <div className="flex-1 flex overflow-hidden">
+                    <div className="flex-1 overflow-y-auto p-6 border-r border-slate-200">
+                      <h3 className="text-xl font-bold text-slate-900 mb-4">Feedback Details</h3>
+
+                      <div className={`p-5 rounded-xl border-2 mb-4 ${
+                        selectedScore.passed
+                          ? 'border-green-200 bg-green-50'
+                          : 'border-red-200 bg-red-50'
+                      }`}>
+                        <div className="flex items-start gap-3 mb-4">
+                          <AlertCircle className={`w-5 h-5 mt-1 flex-shrink-0 ${
+                            selectedScore.passed ? 'text-green-600' : 'text-red-600'
+                          }`} />
+                          <div className="w-full">
+                            <h4 className="text-base font-bold text-slate-900 mb-3">Why were you scored this way?</h4>
+                            <div className="text-sm text-slate-800 leading-relaxed space-y-3">
+                              {selectedScore.feedback.split('\n\n').map((paragraph, idx) => (
+                                <p key={idx}>{paragraph}</p>
+                              ))}
+                            </div>
+
+                            {selectedScore.transcript_references && selectedScore.transcript_references.length > 0 && (
+                              <div className="mt-4 space-y-2">
+                                {selectedScore.transcript_references.map((ref, idx) => (
+                                  <button
+                                    key={idx}
+                                    onClick={() => {
+                                      setHighlightedTimestamp(ref.timestamp);
+                                      const element = document.getElementById(`modal-transcript-${ref.timestamp}`);
+                                      if (element) {
+                                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                        setTimeout(() => setHighlightedTimestamp(null), 3000);
+                                      }
+                                    }}
+                                    className="flex items-start gap-3 w-full text-left p-3 bg-white rounded-lg border border-slate-300 hover:border-cyan-400 hover:shadow-sm transition-all"
+                                  >
+                                    <span className="flex-shrink-0 w-5 h-5 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center mt-0.5">
+                                      {idx + 1}
+                                    </span>
+                                    <div className="flex-1">
+                                      <span className="text-xs font-mono text-cyan-600 font-semibold">
+                                        ({ref.timestamp})
+                                      </span>
+                                      <p className="text-sm text-slate-700 mt-1 italic">"{ref.text}"</p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-5 rounded-xl border-2 border-blue-200 mb-4">
+                        <div className="flex items-start gap-3">
+                          <Lightbulb className="w-5 h-5 text-blue-600 mt-1 flex-shrink-0" />
+                          <div className="w-full">
+                            <h4 className="text-base font-bold text-slate-900 mb-3">What could you do differently next time?</h4>
+                            {selectedScore.improvement_examples && selectedScore.improvement_examples.length > 0 ? (
+                              <div className="text-sm text-slate-800 leading-relaxed space-y-3">
+                                <ol className="space-y-3">
+                                  {selectedScore.improvement_examples.map((example, idx) => (
+                                    <li key={idx} className="flex items-start gap-3">
+                                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
+                                        {idx + 1}
+                                      </span>
+                                      <span className="flex-1 pt-0.5 text-sm">{example}</span>
+                                    </li>
+                                  ))}
+                                </ol>
+                              </div>
+                            ) : selectedScore.passed ? (
+                              <div className="text-sm text-slate-800 leading-relaxed">
+                                <p>Excellent work on this criteria! Continue applying this approach consistently.</p>
+                              </div>
+                            ) : (
+                              <div className="text-sm text-slate-800 leading-relaxed">
+                                <p>N/A</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="w-80 overflow-y-auto p-6 bg-slate-50">
+                      <h3 className="text-xl font-bold text-slate-900 mb-4">Transcript</h3>
+
+                      {transcript && analyticsData.conversationFlow.length > 0 ? (
+                        <div className="space-y-2">
+                          {analyticsData.conversationFlow.map((msg, i) => {
+                            const isHighlighted = highlightedTimestamp === msg.timestamp;
+                            const isReferenced = selectedScore.transcript_references?.some(ref => ref.timestamp === msg.timestamp);
+
+                            return (
+                              <div
+                                key={i}
+                                id={`modal-transcript-${msg.timestamp}`}
+                                className={`transition-all duration-300 ${
+                                  isHighlighted ? 'scale-[1.01]' : ''
+                                }`}
+                              >
+                                <div className={`p-2.5 rounded transition-all duration-300 ${
+                                  isHighlighted
+                                    ? 'bg-cyan-400 text-white'
+                                    : isReferenced
+                                    ? 'bg-cyan-100'
+                                    : 'hover:bg-slate-100'
+                                }`}>
+                                  <div className="flex items-start gap-2 mb-1">
+                                    <span className={`text-xs font-semibold ${
+                                      isHighlighted ? 'text-white' : msg.speaker === 'user' ? 'text-cyan-700' : 'text-slate-600'
+                                    }`}>
+                                      {msg.speaker === 'user' ? 'You' : bot.name}
+                                    </span>
+                                    <span className={`text-xs font-mono ${
+                                      isHighlighted ? 'text-cyan-100' : 'text-slate-500'
+                                    }`}>
+                                      {msg.timestamp}
+                                    </span>
+                                  </div>
+                                  <p className={`text-xs leading-relaxed ${
+                                    isHighlighted ? 'text-white' : 'text-slate-700'
+                                  }`}>{msg.text}</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-500">Transcript not available</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </>
       )}
 
       <div className="bg-white rounded-xl border border-slate-200 p-6">
@@ -380,13 +544,25 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {criteria.map((criterion, index) => (
+              {criteria.map((criterion, index) => {
+                const matchingCriteria = scoringCriteria.find(c =>
+                  c.name.toLowerCase().includes(criterion.name.toLowerCase()) ||
+                  criterion.name.toLowerCase().includes(c.name.toLowerCase())
+                );
+
+                return (
                 <tr
                   key={index}
                   className={`hover:bg-slate-50 transition-colors cursor-pointer ${
                     selectedCriterion === criterion.name ? 'bg-cyan-50' : ''
                   }`}
-                  onClick={() => setSelectedCriterion(criterion.name)}
+                  onClick={() => {
+                    if (matchingCriteria && callScores.length > 0) {
+                      setSelectedCriteriaId(matchingCriteria.id);
+                    } else {
+                      setSelectedCriterion(criterion.name);
+                    }
+                  }}
                 >
                   <td className="px-4 py-4">
                     <span className="font-medium text-slate-900">{criterion.name}</span>
@@ -419,7 +595,8 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                     <span className="text-sm text-slate-700">{criterion.comment}</span>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
