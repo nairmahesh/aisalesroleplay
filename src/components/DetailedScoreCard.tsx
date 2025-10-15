@@ -28,6 +28,12 @@ export interface CallScore {
   transcript_references?: TranscriptReference[];
 }
 
+export interface TranscriptMessage {
+  timestamp: string;
+  speaker: string;
+  text: string;
+}
+
 interface DetailedScoreCardProps {
   totalScore: number;
   maxScore: number;
@@ -35,13 +41,29 @@ interface DetailedScoreCardProps {
   scores: CallScore[];
   overallFeedback?: string;
   onCriterionClick?: (timestamp: string) => void;
+  transcript?: TranscriptMessage[];
+  botName?: string;
 }
 
-export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, overallFeedback, onCriterionClick }: DetailedScoreCardProps) {
+export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, overallFeedback, onCriterionClick, transcript, botName }: DetailedScoreCardProps) {
   const [selectedCriteriaId, setSelectedCriteriaId] = useState<string | null>(null);
+  const [highlightedTimestamp, setHighlightedTimestamp] = useState<string | null>(null);
 
   const getScoreForCriteria = (criteriaId: string) => {
     return scores.find(s => s.criteria_id === criteriaId);
+  };
+
+  const scrollToTranscript = (timestamp: string) => {
+    setHighlightedTimestamp(timestamp);
+
+    const element = document.getElementById(`modal-transcript-${timestamp}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      setTimeout(() => {
+        setHighlightedTimestamp(null);
+      }, 3000);
+    }
   };
 
   const groupedCriteria = criteria.reduce((acc, criterion) => {
@@ -245,6 +267,28 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
                           <p key={idx}>{paragraph}</p>
                         ))}
                       </div>
+
+                      {selectedScore.transcript_references && selectedScore.transcript_references.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          {selectedScore.transcript_references.map((ref, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => scrollToTranscript(ref.timestamp)}
+                              className="flex items-start gap-3 w-full text-left p-3 bg-white rounded-lg border border-slate-300 hover:border-cyan-400 hover:shadow-sm transition-all"
+                            >
+                              <span className="flex-shrink-0 w-5 h-5 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center mt-0.5">
+                                {idx + 1}
+                              </span>
+                              <div className="flex-1">
+                                <span className="text-xs font-mono text-cyan-600 font-semibold">
+                                  ({ref.timestamp})
+                                </span>
+                                <p className="text-sm text-slate-700 mt-1 italic">"{ref.text}"</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -298,47 +342,54 @@ export function DetailedScoreCard({ totalScore, maxScore, criteria, scores, over
               </div>
 
               <div className="w-1/2 overflow-y-auto p-6 bg-slate-50">
-                <h3 className="text-xl font-bold text-slate-900 mb-4">Transcript References</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Full Transcript</h3>
 
-                {selectedScore.transcript_references && selectedScore.transcript_references.length > 0 ? (
+                {transcript && transcript.length > 0 ? (
                   <div className="space-y-3">
-                    {selectedScore.transcript_references.map((ref, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => {
-                          if (onCriterionClick) {
-                            onCriterionClick(ref.timestamp);
-                            setSelectedCriteriaId(null);
-                          }
-                        }}
-                        className="w-full text-left p-4 bg-white rounded-lg border-2 border-slate-200 hover:border-cyan-400 hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-start gap-3 mb-2">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-600 text-white text-xs font-bold flex items-center justify-center">
-                            {idx + 1}
-                          </span>
-                          <span className="text-xs font-mono text-cyan-600 font-semibold pt-1">
-                            ({ref.timestamp})
-                          </span>
+                    {transcript.map((msg, i) => {
+                      const isHighlighted = highlightedTimestamp === msg.timestamp;
+                      const isReferenced = selectedScore.transcript_references?.some(ref => ref.timestamp === msg.timestamp);
+
+                      return (
+                        <div
+                          key={i}
+                          id={`modal-transcript-${msg.timestamp}`}
+                          className={`transition-all duration-300 ${
+                            isHighlighted ? 'scale-[1.02]' : ''
+                          }`}
+                        >
+                          <div className={`p-3 rounded-lg transition-all duration-300 ${
+                            isHighlighted
+                              ? 'ring-2 ring-cyan-400 shadow-lg bg-gradient-to-br from-cyan-100 to-blue-100 border-2 border-cyan-400'
+                              : isReferenced
+                              ? 'bg-white border-2 border-cyan-200'
+                              : msg.speaker === 'user'
+                              ? 'bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200'
+                              : 'bg-white border border-slate-200'
+                          }`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-xs font-mono text-slate-500">
+                                {msg.timestamp}
+                              </span>
+                              <span className={`text-xs font-bold uppercase ${
+                                msg.speaker === 'user' ? 'text-cyan-700' : 'text-slate-600'
+                              }`}>
+                                {msg.speaker === 'user' ? 'YOU' : botName || 'BOT'}
+                              </span>
+                              {isReferenced && (
+                                <span className="text-xs font-semibold text-cyan-700 bg-cyan-200 px-2 py-0.5 rounded-full">
+                                  Referenced
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-800">{msg.text}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-slate-800 pl-9 italic">"{ref.text}"</p>
-                        <p className="text-xs text-slate-500 pl-9 mt-1 uppercase font-semibold">{ref.speaker}</p>
-                      </button>
-                    ))}
-                  </div>
-                ) : selectedScore.transcript_evidence ? (
-                  <div className="bg-white p-4 rounded-lg border-2 border-slate-200">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-xs font-mono text-cyan-600 font-semibold">
-                        ({selectedScore.timestamp || '0:00'})
-                      </span>
-                    </div>
-                    <div className="text-sm text-slate-800 font-mono whitespace-pre-wrap">
-                      {selectedScore.transcript_evidence}
-                    </div>
+                      );
+                    })}
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-500">No transcript references available for this criterion.</p>
+                  <p className="text-sm text-slate-500">Transcript not available</p>
                 )}
               </div>
             </div>

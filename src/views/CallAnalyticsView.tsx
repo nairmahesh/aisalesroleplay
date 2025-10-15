@@ -354,6 +354,8 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
           scores={callScores}
           overallFeedback={detailedOverallFeedback}
           onCriterionClick={jumpToTimestamp}
+          transcript={analyticsData.conversationFlow}
+          botName={bot.name}
         />
       )}
 
