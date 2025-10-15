@@ -203,7 +203,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
           <div className="flex items-start gap-4 mb-6">
             <button
               onClick={onBack}
-              className="flex-shrink-0 p-2 -ml-2 -mt-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex-shrink-0 p-2 -ml-2 -mt-1 text-slate-900 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-8 h-8 stroke-[3]" />
             </button>
