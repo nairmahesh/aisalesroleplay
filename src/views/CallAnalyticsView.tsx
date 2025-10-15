@@ -75,12 +75,15 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
         .maybeSingle();
 
       if (criteriaData) {
+        console.log('Loaded criteria:', criteriaData.length, criteriaData);
         setScoringCriteria(criteriaData);
       }
       if (scoresData) {
+        console.log('Loaded scores for session:', sessionId, scoresData.length, scoresData);
         setCallScores(scoresData);
       }
       if (analyticsData) {
+        console.log('Loaded analytics:', analyticsData);
         setDetailedTotalScore(analyticsData.total_score || 0);
         setDetailedMaxScore(analyticsData.max_score || 100);
       }
@@ -151,6 +154,11 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
       </div>
     );
   }
+
+  console.log('Render - Criteria count:', scoringCriteria.length);
+  console.log('Render - Scores count:', callScores.length);
+  console.log('Render - Grouped categories:', Object.keys(groupedCriteria));
+  console.log('Render - Active tab:', activeTab);
 
   return (
     <div className="flex h-screen bg-white">
