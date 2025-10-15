@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Clock, Search, Info } from 'lucide-react';
+import { Plus, Clock, Search, Info, Link2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { CreateRoomModal, RoomFormData } from '../components/CreateRoomModal';
 import { HumanCallRoomView } from './HumanCallRoomView';
@@ -15,6 +15,8 @@ interface PracticeRoom {
   rep_name: string;
   client_name: string;
   client_company: string;
+  allow_external: boolean;
+  external_invite_token: string | null;
 }
 
 export function HumanToHumanView() {
@@ -23,6 +25,7 @@ export function HumanToHumanView() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRooms();
@@ -58,6 +61,12 @@ export function HumanToHumanView() {
   async function createRoom(formData: RoomFormData) {
     try {
       const roomCode = await generateRoomCode();
+      let externalToken = null;
+
+      if (formData.allow_external) {
+        const { data } = await supabase.rpc('generate_external_invite_token');
+        externalToken = data || generateFallbackToken();
+      }
 
       const { error } = await supabase
         .from('practice_rooms')
@@ -74,6 +83,8 @@ export function HumanToHumanView() {
             call_cta: formData.call_cta,
             status: 'waiting',
             participants_count: 0,
+            allow_external: formData.allow_external,
+            external_invite_token: externalToken,
           },
         ]);
 
@@ -85,6 +96,15 @@ export function HumanToHumanView() {
       console.error('Error creating room:', error);
       alert('Failed to create room. Please try again.');
     }
+  }
+
+  function generateFallbackToken(): string {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let token = '';
+    for (let i = 0; i < 32; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
   }
 
   async function generateRoomCode(): Promise<string> {
@@ -107,6 +127,14 @@ export function HumanToHumanView() {
   function handleLeaveRoom() {
     setActiveRoomId(null);
     fetchRooms();
+  }
+
+  function copyInviteLink(token: string) {
+    const baseUrl = window.location.origin;
+    const inviteUrl = `${baseUrl}/invite?token=${token}`;
+    navigator.clipboard.writeText(inviteUrl);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
   }
 
   const filteredRooms = rooms.filter((room) =>
@@ -210,6 +238,27 @@ export function HumanToHumanView() {
                   <span className="font-medium">Client:</span>
                   <span>{room.client_name} ({room.client_company})</span>
                 </div>
+              </div>
+            )}
+
+            {room.allow_external && room.external_invite_token && (
+              <div className="mb-3">
+                <button
+                  onClick={() => copyInviteLink(room.external_invite_token!)}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors"
+                >
+                  {copiedToken === room.external_invite_token ? (
+                    <>
+                      <Check className="w-4 h-4 text-green-600" />
+                      <span className="text-green-600">Link Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Link2 className="w-4 h-4" />
+                      <span>Copy External Invite Link</span>
+                    </>
+                  )}
+                </button>
               </div>
             )}
 

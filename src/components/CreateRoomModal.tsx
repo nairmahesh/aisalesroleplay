@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface CreateRoomModalProps {
   onClose: () => void;
@@ -9,36 +10,122 @@ interface CreateRoomModalProps {
 export interface RoomFormData {
   name: string;
   rep_name: string;
+  rep_type: 'employee' | 'external';
+  rep_employee_id?: string;
   client_name: string;
+  client_type: 'employee' | 'external';
+  client_employee_id?: string;
   client_company: string;
   client_designation: string;
   company_description: string;
   call_objective: string;
   call_cta: string;
+  allow_external: boolean;
+}
+
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
 }
 
 export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps) {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [allowExternal, setAllowExternal] = useState(false);
   const [formData, setFormData] = useState<RoomFormData>({
     name: '',
     rep_name: '',
+    rep_type: 'employee',
     client_name: '',
+    client_type: 'employee',
     client_company: '',
     client_designation: '',
     company_description: '',
     call_objective: '',
     call_cta: '',
+    allow_external: false,
   });
+
+  useEffect(() => {
+    fetchEmployees();
+    checkExternalAllowed();
+  }, []);
+
+  async function fetchEmployees() {
+    const { data } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (data) {
+      setEmployees(data);
+    }
+  }
+
+  async function checkExternalAllowed() {
+    const { data } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'allow_external_invites')
+      .maybeSingle();
+
+    if (data?.value && typeof data.value === 'object' && 'enabled' in data.value) {
+      setAllowExternal(data.value.enabled as boolean);
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreateRoom(formData);
+    const hasExternal = formData.rep_type === 'external' || formData.client_type === 'external';
+    onCreateRoom({ ...formData, allow_external: hasExternal });
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+  };
+
+  const handleRepTypeChange = (type: 'employee' | 'external') => {
+    setFormData({
+      ...formData,
+      rep_type: type,
+      rep_name: '',
+      rep_employee_id: undefined,
+    });
+  };
+
+  const handleClientTypeChange = (type: 'employee' | 'external') => {
+    setFormData({
+      ...formData,
+      client_type: type,
+      client_name: '',
+      client_employee_id: undefined,
+    });
+  };
+
+  const handleEmployeeSelect = (field: 'rep' | 'client', employeeId: string) => {
+    const employee = employees.find((e) => e.id === employeeId);
+    if (employee) {
+      if (field === 'rep') {
+        setFormData({
+          ...formData,
+          rep_employee_id: employeeId,
+          rep_name: employee.name,
+        });
+      } else {
+        setFormData({
+          ...formData,
+          client_employee_id: employeeId,
+          client_name: employee.name,
+          client_designation: employee.role,
+        });
+      }
+    }
   };
 
   return (
@@ -76,71 +163,158 @@ export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps)
           </div>
 
           <div className="border-t border-slate-200 pt-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Sales Rep Information</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Rep Name <span className="text-red-500">*</span>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Participants</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-slate-700">
+                  Sales Rep <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  name="rep_name"
-                  value={formData.rep_name}
-                  onChange={handleChange}
-                  placeholder="Who will play the sales rep?"
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
-                  required
-                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRepTypeChange('employee')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      formData.rep_type === 'employee'
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Employee
+                  </button>
+                  {allowExternal && (
+                    <button
+                      type="button"
+                      onClick={() => handleRepTypeChange('external')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        formData.rep_type === 'external'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      External
+                    </button>
+                  )}
+                </div>
+                {formData.rep_type === 'employee' ? (
+                  <select
+                    onChange={(e) => handleEmployeeSelect('rep', e.target.value)}
+                    value={formData.rep_employee_id || ''}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
+                    required
+                  >
+                    <option value="">Select employee...</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} - {emp.role}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    name="rep_name"
+                    value={formData.rep_name}
+                    onChange={handleChange}
+                    placeholder="External rep name"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
+                    required
+                  />
+                )}
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-slate-700">
+                  Client/Prospect <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleClientTypeChange('employee')}
+                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      formData.client_type === 'employee'
+                        ? 'bg-slate-900 text-white'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    Employee
+                  </button>
+                  {allowExternal && (
+                    <button
+                      type="button"
+                      onClick={() => handleClientTypeChange('external')}
+                      className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        formData.client_type === 'external'
+                          ? 'bg-slate-900 text-white'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      External
+                    </button>
+                  )}
+                </div>
+                {formData.client_type === 'employee' ? (
+                  <select
+                    onChange={(e) => handleEmployeeSelect('client', e.target.value)}
+                    value={formData.client_employee_id || ''}
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
+                    required
+                  >
+                    <option value="">Select employee...</option>
+                    {employees.map((emp) => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.name} - {emp.role}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    name="client_name"
+                    value={formData.client_name}
+                    onChange={handleChange}
+                    placeholder="External client name"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
+                    required
+                  />
+                )}
               </div>
             </div>
           </div>
 
           <div className="border-t border-slate-200 pt-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Client/Prospect Information</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Client Information</h3>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Client Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="client_name"
-                  value={formData.client_name}
-                  onChange={handleChange}
-                  placeholder="Name of the prospect to roleplay"
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
-                  required
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Company Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="client_company"
+                    value={formData.client_company}
+                    onChange={handleChange}
+                    placeholder="Client's company"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Company Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="client_company"
-                  value={formData.client_company}
-                  onChange={handleChange}
-                  placeholder="Client's company name"
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Designation/Title <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="client_designation"
-                  value={formData.client_designation}
-                  onChange={handleChange}
-                  placeholder="e.g., VP of Sales, CTO, Director of Marketing"
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Designation <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="client_designation"
+                    value={formData.client_designation}
+                    onChange={handleChange}
+                    placeholder="e.g., VP of Sales"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none"
+                    required
+                    disabled={formData.client_type === 'employee'}
+                  />
+                </div>
               </div>
 
               <div>
@@ -151,7 +325,7 @@ export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps)
                   name="company_description"
                   value={formData.company_description}
                   onChange={handleChange}
-                  placeholder="Brief description of the company, industry, size, challenges..."
+                  placeholder="Industry, size, challenges, current situation..."
                   rows={3}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-none"
                   required
@@ -171,7 +345,7 @@ export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps)
                   name="call_objective"
                   value={formData.call_objective}
                   onChange={handleChange}
-                  placeholder="What is the goal of this call? e.g., Understand pain points, qualify lead, schedule demo..."
+                  placeholder="What should be accomplished in this call?"
                   rows={2}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-none"
                   required
@@ -180,13 +354,13 @@ export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps)
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Call to Action (CTA) <span className="text-red-500">*</span>
+                  Call to Action <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   name="call_cta"
                   value={formData.call_cta}
                   onChange={handleChange}
-                  placeholder="What specific action do you want the prospect to take? e.g., Book a demo, agree to trial, schedule follow-up..."
+                  placeholder="Desired next step or commitment from prospect"
                   rows={2}
                   className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none resize-none"
                   required
