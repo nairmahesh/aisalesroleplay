@@ -372,7 +372,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                                   <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
                                 )}
                                 <span className="text-sm font-medium text-slate-900">
-                                  {category} – {criterion.name}
+                                  {category.toUpperCase()} – {criterion.name}
                                 </span>
                               </div>
                               <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
@@ -578,7 +578,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                                   <XCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
                                 )}
                                 <span className="text-sm font-medium text-slate-900">
-                                  {category} – {criterion.name}
+                                  {category.toUpperCase()} – {criterion.name}
                                 </span>
                               </div>
                               <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-slate-600" />
@@ -598,13 +598,13 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
               <div className="p-6 border-b border-slate-200">
                 <button
                   onClick={() => setSelectedCriteriaId(null)}
-                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4"
+                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6"
                 >
                   <ArrowLeft className="w-4 h-4" />
                   View full scorecard
                 </button>
 
-                <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1">
                   {scoringCriteria.map((criterion) => {
                     const score = getScoreForCriteria(criterion.id);
                     const isPassed = score?.passed || false;
@@ -629,7 +629,7 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
                         ) : (
                           <XCircle className="w-4 h-4" />
                         )}
-                        {criterion.category} – {criterion.name}
+                        {criterion.category.toUpperCase()} – {criterion.name}
                       </button>
                     );
                   })}
@@ -639,10 +639,10 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
               <div className="flex-1 overflow-y-auto p-6">
                 <div className="mb-6">
                   <h2 className="text-xl font-bold text-slate-900 mb-2">
-                    {selectedCriteria.category} - {selectedCriteria.name}
+                    {selectedCriteria.category.toLowerCase().replace(/^\w/, c => c.toUpperCase())} - {selectedCriteria.name}
                   </h2>
                   <p className="text-xs text-slate-600 uppercase tracking-wide font-semibold">
-                    {selectedCriteria.category}
+                    {selectedCriteria.category.toUpperCase()}
                   </p>
                 </div>
 
