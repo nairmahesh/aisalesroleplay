@@ -172,10 +172,9 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
   const selectedScore = selectedCriteriaId ? getScoreForCriteria(selectedCriteriaId) : null;
 
   return (
-    <div className="fixed inset-0 flex">
-      <div className="flex-1 flex overflow-hidden">
-        {/* Middle Section - Analytics */}
-        <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
+    <div className="flex -mx-8 -my-8 h-screen">
+      {/* Middle Section - Analytics */}
+      <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
           <div className="mb-6">
             <button
               onClick={onBack}
@@ -476,7 +475,6 @@ export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewP
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }
