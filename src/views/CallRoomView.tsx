@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, MessageSquare, User, Bot as BotIcon, ArrowLeft } from 'lucide-react';
+import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, MessageSquare, User, Bot as BotIcon, ArrowLeft, Users as UsersIcon } from 'lucide-react';
 import { Bot, supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { PracticeMode } from '../components/PracticeModeSelector';
 
 interface CallRoomViewProps {
   bot: Bot;
+  practiceMode: PracticeMode;
   onEndCall: () => void;
 }
 
@@ -16,7 +18,7 @@ interface Message {
   sentiment?: 'positive' | 'neutral' | 'negative';
 }
 
-export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
+export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps) {
   const { user } = useAuth();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -57,6 +59,8 @@ export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
         user_id: user.id,
         status: 'in_progress',
         started_at: new Date().toISOString(),
+        practice_mode: practiceMode,
+        feedback_enabled: practiceMode !== 'self_practice',
       })
       .select()
       .single();
@@ -65,9 +69,16 @@ export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
       setCallId(newCall.id);
     }
 
-    setTimeout(() => {
-      addMessage('bot', "Hello! This is " + bot.name + ". Thanks for reaching out. How can I help you today?", 'neutral');
-    }, 1500);
+    // Only AI bot responds automatically
+    if (practiceMode === 'ai_roleplay') {
+      setTimeout(() => {
+        addMessage('bot', "Hello! This is " + bot.name + ". Thanks for reaching out. How can I help you today?", 'neutral');
+      }, 1500);
+    } else if (practiceMode === 'human_roleplay') {
+      setTimeout(() => {
+        addMessage('bot', "[Waiting for human partner to respond...]", 'neutral');
+      }, 1000);
+    }
   };
 
   const endCall = async () => {
@@ -188,7 +199,11 @@ export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
             <span className="font-medium">Exit Call</span>
           </button>
           <div className="text-center">
-            <h2 className="text-xl font-bold text-white">Active Call</h2>
+            <h2 className="text-xl font-bold text-white">
+              {practiceMode === 'ai_roleplay' && 'AI Roleplay'}
+              {practiceMode === 'human_roleplay' && 'Human Roleplay'}
+              {practiceMode === 'self_practice' && 'Pitch Practice'}
+            </h2>
             <p className="text-sm text-slate-400">{isCallActive ? formatDuration(callDuration) : 'Not started'}</p>
           </div>
           <div className="w-24" />
@@ -218,6 +233,17 @@ export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
                   <span className="px-3 py-1 bg-cyan-500 bg-opacity-20 text-cyan-300 text-xs font-medium rounded-full">
                     {bot.call_type}
                   </span>
+                  {practiceMode === 'human_roleplay' && (
+                    <span className="px-3 py-1 bg-emerald-500 bg-opacity-20 text-emerald-300 text-xs font-medium rounded-full flex items-center gap-1">
+                      <UsersIcon className="w-3 h-3" />
+                      Human
+                    </span>
+                  )}
+                  {practiceMode === 'self_practice' && (
+                    <span className="px-3 py-1 bg-blue-500 bg-opacity-20 text-blue-300 text-xs font-medium rounded-full">
+                      Self-paced
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -270,15 +296,29 @@ export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
                     </button>
                   </div>
 
-                  <div className="text-center">
-                    <button
-                      onClick={simulateUserMessage}
-                      className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors"
-                    >
-                      Simulate Speaking
-                    </button>
-                    <p className="text-xs text-slate-400 mt-2">Demo: Click to add messages to transcript</p>
-                  </div>
+                  {practiceMode === 'ai_roleplay' && (
+                    <div className="text-center">
+                      <button
+                        onClick={simulateUserMessage}
+                        className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors"
+                      >
+                        Simulate Speaking
+                      </button>
+                      <p className="text-xs text-slate-400 mt-2">Demo: Click to add messages to transcript</p>
+                    </div>
+                  )}
+                  {practiceMode === 'human_roleplay' && (
+                    <div className="text-center">
+                      <p className="text-sm text-slate-300">Speak naturally with your partner</p>
+                      <p className="text-xs text-slate-400 mt-2">Conversation is being recorded</p>
+                    </div>
+                  )}
+                  {practiceMode === 'self_practice' && (
+                    <div className="text-center">
+                      <p className="text-sm text-slate-300">Practice your pitch out loud</p>
+                      <p className="text-xs text-slate-400 mt-2">Recording for your review</p>
+                    </div>
+                  )}
 
                   {isListening && (
                     <div className="flex items-center justify-center gap-2 text-cyan-400">

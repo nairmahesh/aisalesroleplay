@@ -5,6 +5,7 @@ import { BotCard } from '../components/BotCard';
 import { BotDetailsModal } from '../components/BotDetailsModal';
 import { StartCallModal } from '../components/StartCallModal';
 import { CallRoomView } from './CallRoomView';
+import { PracticeMode } from '../components/PracticeModeSelector';
 
 export function BotsView() {
   const [bots, setBots] = useState<Bot[]>([]);
@@ -16,6 +17,7 @@ export function BotsView() {
   const [selectedBot, setSelectedBot] = useState<Bot | null>(null);
   const [startCallBot, setStartCallBot] = useState<Bot | null>(null);
   const [activeCallBot, setActiveCallBot] = useState<Bot | null>(null);
+  const [selectedPracticeMode, setSelectedPracticeMode] = useState<PracticeMode>('ai_roleplay');
 
   useEffect(() => {
     fetchBots();
@@ -72,8 +74,9 @@ export function BotsView() {
     setStartCallBot(bot);
   }
 
-  function confirmStartCall() {
+  function confirmStartCall(mode: PracticeMode) {
     if (startCallBot) {
+      setSelectedPracticeMode(mode);
       setActiveCallBot(startCallBot);
     }
     setStartCallBot(null);
@@ -85,7 +88,7 @@ export function BotsView() {
   }
 
   if (activeCallBot) {
-    return <CallRoomView bot={activeCallBot} onEndCall={handleEndCall} />;
+    return <CallRoomView bot={activeCallBot} practiceMode={selectedPracticeMode} onEndCall={handleEndCall} />;
   }
 
   if (loading) {
