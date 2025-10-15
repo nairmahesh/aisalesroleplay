@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Phone, PhoneOff, Mic, MicOff, Volume2, VolumeX, MessageSquare, User, Bot as BotIcon, ArrowLeft } from 'lucide-react';
-import { Bot } from '../lib/supabase';
+import { Bot, supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CallRoomViewProps {
   bot: Bot;
@@ -16,12 +17,15 @@ interface Message {
 }
 
 export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
+  const { user } = useAuth();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [transcript, setTranscript] = useState<Message[]>([]);
   const [callDuration, setCallDuration] = useState(0);
   const [isListening] = useState(false);
+  const [callId, setCallId] = useState<string | null>(null);
+  const [callStartTime, setCallStartTime] = useState<Date | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -39,15 +43,99 @@ export function CallRoomView({ bot, onEndCall }: CallRoomViewProps) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startCall = () => {
+  const startCall = async () => {
+    if (!user) return;
+
+    setCallStartTime(new Date());
     setIsCallActive(true);
+
+    // Create call record in database
+    const { data: newCall, error } = await supabase
+      .from('calls')
+      .insert({
+        bot_id: bot.id,
+        user_id: user.id,
+        status: 'in_progress',
+        started_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (!error && newCall) {
+      setCallId(newCall.id);
+    }
+
     setTimeout(() => {
       addMessage('bot', "Hello! This is " + bot.name + ". Thanks for reaching out. How can I help you today?", 'neutral');
     }, 1500);
   };
 
-  const endCall = () => {
+  const endCall = async () => {
     setIsCallActive(false);
+
+    // Save call data to database
+    if (callId && callStartTime) {
+      const endTime = new Date();
+      const durationInSeconds = Math.floor((endTime.getTime() - callStartTime.getTime()) / 1000);
+
+      // Update call record
+      await supabase
+        .from('calls')
+        .update({
+          status: 'completed',
+          ended_at: endTime.toISOString(),
+          duration: durationInSeconds,
+        })
+        .eq('id', callId);
+
+      // Save transcript
+      const transcriptData = transcript.map((msg, index) => ({
+        call_id: callId,
+        speaker: msg.speaker,
+        message: msg.message,
+        timestamp: msg.timestamp.toISOString(),
+        sequence_number: index,
+      }));
+
+      if (transcriptData.length > 0) {
+        await supabase
+          .from('transcripts')
+          .insert(transcriptData);
+      }
+
+      // Generate and save scores (simplified example)
+      const scores = [
+        {
+          call_id: callId,
+          category: 'rapport',
+          score: 75 + Math.floor(Math.random() * 20),
+          feedback: 'Good connection established with prospect',
+        },
+        {
+          call_id: callId,
+          category: 'discovery',
+          score: 70 + Math.floor(Math.random() * 25),
+          feedback: 'Asked relevant qualifying questions',
+        },
+        {
+          call_id: callId,
+          category: 'objection_handling',
+          score: 65 + Math.floor(Math.random() * 30),
+          feedback: 'Addressed concerns effectively',
+        },
+        {
+          call_id: callId,
+          category: 'closing',
+          score: 60 + Math.floor(Math.random() * 35),
+          feedback: 'Clear next steps established',
+        },
+      ];
+
+      await supabase
+        .from('scores')
+        .insert(scores);
+    }
+
     setTimeout(() => {
       onEndCall();
     }, 500);
