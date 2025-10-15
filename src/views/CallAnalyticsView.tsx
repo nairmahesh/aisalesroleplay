@@ -1,6 +1,8 @@
 import { ArrowLeft, TrendingUp, MessageSquare, Clock, Award, CheckCircle, XCircle, AlertTriangle, PlayCircle } from 'lucide-react';
 import { Bot } from '../lib/supabase';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { DetailedScoreCard, ScoringCriteria, CallScore } from '../components/DetailedScoreCard';
 
 interface CallAnalyticsViewProps {
   sessionId: string;
@@ -16,8 +18,51 @@ interface FrameworkCriterion {
   comment: string;
 }
 
-export function CallAnalyticsView({ bot, onBack }: CallAnalyticsViewProps) {
+export function CallAnalyticsView({ sessionId, bot, onBack }: CallAnalyticsViewProps) {
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(null);
+  const [scoringCriteria, setScoringCriteria] = useState<ScoringCriteria[]>([]);
+  const [callScores, setCallScores] = useState<CallScore[]>([]);
+  const [detailedTotalScore, setDetailedTotalScore] = useState<number>(0);
+  const [detailedMaxScore, setDetailedMaxScore] = useState<number>(100);
+  const [detailedOverallFeedback, setDetailedOverallFeedback] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadScoringData();
+  }, [sessionId]);
+
+  const loadScoringData = async () => {
+    try {
+      const { data: criteriaData } = await supabase
+        .from('scoring_criteria')
+        .select('*')
+        .order('order_index', { ascending: true });
+
+      const { data: scoresData } = await supabase
+        .from('call_scores')
+        .select('*')
+        .eq('session_id', sessionId);
+
+      const { data: analyticsData } = await supabase
+        .from('call_analytics')
+        .select('total_score, max_score, overall_feedback')
+        .eq('session_id', sessionId)
+        .maybeSingle();
+
+      if (criteriaData) setScoringCriteria(criteriaData);
+      if (scoresData) setCallScores(scoresData);
+      if (analyticsData) {
+        setDetailedTotalScore(analyticsData.total_score || 0);
+        setDetailedMaxScore(analyticsData.max_score || 100);
+        setDetailedOverallFeedback(analyticsData.overall_feedback || '');
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading scoring data:', error);
+      setLoading(false);
+    }
+  };
 
   const analyticsData = {
     overallScore: 67,
@@ -290,6 +335,16 @@ export function CallAnalyticsView({ bot, onBack }: CallAnalyticsViewProps) {
           </div>
         </div>
       </div>
+
+      {scoringCriteria.length > 0 && callScores.length > 0 && (
+        <DetailedScoreCard
+          totalScore={detailedTotalScore}
+          maxScore={detailedMaxScore}
+          criteria={scoringCriteria}
+          scores={callScores}
+          overallFeedback={detailedOverallFeedback}
+        />
+      )}
 
       <div className="bg-white rounded-xl border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-6">
