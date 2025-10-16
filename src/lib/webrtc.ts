@@ -1,7 +1,7 @@
 import { supabase } from './supabase';
 
 export interface WebRTCMessage {
-  type: 'offer' | 'answer' | 'ice-candidate' | 'ready' | 'leave';
+  type: 'offer' | 'answer' | 'ice-candidate' | 'ready' | 'leave' | 'peer-joined';
   data?: any;
   from: string;
   to?: string;
@@ -17,6 +17,7 @@ export class WebRTCConnection {
   private onRemoteStreamCallback?: (stream: MediaStream) => void;
   private onConnectionStateChangeCallback?: (state: string) => void;
   private signalChannel: any = null;
+  private isInitiator: boolean = false;
 
   constructor(roomCode: string, userId: string) {
     this.roomCode = roomCode;
@@ -76,6 +77,11 @@ export class WebRTCConnection {
 
       try {
         switch (message.type) {
+          case 'peer-joined':
+            if (this.isInitiator) {
+              await this.createOffer();
+            }
+            break;
           case 'offer':
             await this.handleOffer(message.data);
             break;
@@ -93,6 +99,12 @@ export class WebRTCConnection {
 
     await channel.subscribe();
     this.signalChannel = channel;
+
+    this.sendSignal({
+      type: 'peer-joined',
+      from: this.userId,
+      roomCode: this.roomCode,
+    });
   }
 
   async startLocalStream() {
@@ -113,6 +125,10 @@ export class WebRTCConnection {
       console.error('Error accessing media devices:', error);
       throw error;
     }
+  }
+
+  setAsInitiator(isInitiator: boolean) {
+    this.isInitiator = isInitiator;
   }
 
   async createOffer() {

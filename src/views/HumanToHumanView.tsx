@@ -30,6 +30,7 @@ export function HumanToHumanView() {
 
   useEffect(() => {
     fetchRooms();
+    checkForRoomInUrl();
 
     const channel = supabase
       .channel('practice_rooms_changes')
@@ -42,6 +43,23 @@ export function HumanToHumanView() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  async function checkForRoomInUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const roomCode = params.get('room');
+
+    if (roomCode) {
+      const { data } = await supabase
+        .from('practice_rooms')
+        .select('id')
+        .eq('room_code', roomCode)
+        .maybeSingle();
+
+      if (data?.id) {
+        setActiveRoomId(data.id);
+      }
+    }
+  }
 
   async function fetchRooms() {
     try {

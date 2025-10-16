@@ -30,6 +30,7 @@ export function HumanCallRoomView({ roomId, onLeave }: HumanCallRoomViewProps) {
   const [connectionState, setConnectionState] = useState<string>('new');
   const [participantCount, setParticipantCount] = useState(0);
   const [copied, setCopied] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
 
   const webrtcRef = useRef<WebRTCConnection | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
@@ -92,6 +93,9 @@ export function HumanCallRoomView({ roomId, onLeave }: HumanCallRoomViewProps) {
       const webrtc = new WebRTCConnection(room.room_code, userIdRef.current);
       webrtcRef.current = webrtc;
 
+      const isFirstUser = participantCount <= 1;
+      webrtc.setAsInitiator(isFirstUser);
+
       await webrtc.initialize();
       const localStream = await webrtc.startLocalStream();
 
@@ -109,7 +113,6 @@ export function HumanCallRoomView({ roomId, onLeave }: HumanCallRoomViewProps) {
         setConnectionState(state);
       });
 
-      await webrtc.createOffer();
       setIsCallActive(true);
 
       await supabase
@@ -160,6 +163,13 @@ export function HumanCallRoomView({ roomId, onLeave }: HumanCallRoomViewProps) {
     }
   }
 
+  function copyRoomUrl() {
+    const url = `${window.location.origin}${window.location.pathname}?room=${room?.room_code}`;
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
+  }
+
   if (!room) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -181,16 +191,26 @@ export function HumanCallRoomView({ roomId, onLeave }: HumanCallRoomViewProps) {
           </button>
           <div className="text-center">
             <h2 className="text-xl font-bold text-white">{room.name}</h2>
-            <div className="flex items-center justify-center gap-2 mt-1">
-              <span className="text-sm text-slate-400">Room Code:</span>
+            <div className="flex items-center justify-center gap-3 mt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-slate-400">Room Code:</span>
+                <button
+                  onClick={copyRoomCode}
+                  className="flex items-center gap-1 px-2 py-1 bg-slate-700 hover:bg-slate-600 text-cyan-400 text-sm font-mono rounded transition-colors"
+                >
+                  {room.room_code}
+                  <Copy className="w-3 h-3" />
+                </button>
+                {copied && <span className="text-xs text-green-400">Copied!</span>}
+              </div>
+              <div className="h-4 w-px bg-slate-600" />
               <button
-                onClick={copyRoomCode}
-                className="flex items-center gap-1 px-2 py-1 bg-slate-700 hover:bg-slate-600 text-cyan-400 text-sm font-mono rounded transition-colors"
+                onClick={copyRoomUrl}
+                className="flex items-center gap-2 px-3 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-medium rounded transition-colors"
               >
-                {room.room_code}
                 <Copy className="w-3 h-3" />
+                {copiedUrl ? 'URL Copied!' : 'Copy URL'}
               </button>
-              {copied && <span className="text-xs text-green-400">Copied!</span>}
             </div>
           </div>
           <div className="flex items-center gap-2 text-slate-400">
