@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase';
 interface CreateRoomModalProps {
   onClose: () => void;
   onCreateRoom: (roomData: RoomFormData) => void;
+  initialData?: Partial<RoomFormData>;
+  isEditing?: boolean;
 }
 
 export interface RoomFormData {
@@ -30,21 +32,21 @@ interface Employee {
   role: string;
 }
 
-export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps) {
+export function CreateRoomModal({ onClose, onCreateRoom, initialData, isEditing = false }: CreateRoomModalProps) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [allowExternal, setAllowExternal] = useState(false);
   const [formData, setFormData] = useState<RoomFormData>({
-    name: '',
-    rep_name: '',
-    rep_type: 'employee',
-    client_name: '',
-    client_type: 'employee',
-    client_company: '',
-    client_designation: '',
-    company_description: '',
-    call_objective: '',
-    call_cta: '',
-    allow_external: false,
+    name: initialData?.name || '',
+    rep_name: initialData?.rep_name || '',
+    rep_type: initialData?.rep_type || 'employee',
+    client_name: initialData?.client_name || '',
+    client_type: initialData?.client_type || 'employee',
+    client_company: initialData?.client_company || '',
+    client_designation: initialData?.client_designation || '',
+    company_description: initialData?.company_description || '',
+    call_objective: initialData?.call_objective || '',
+    call_cta: initialData?.call_cta || '',
+    allow_external: initialData?.allow_external || false,
   });
 
   useEffect(() => {
@@ -132,7 +134,7 @@ export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps)
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-slate-900">Create Practice Room</h2>
+          <h2 className="text-2xl font-bold text-slate-900">{isEditing ? 'Edit Practice Room' : 'Create Practice Room'}</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
@@ -381,7 +383,7 @@ export function CreateRoomModal({ onClose, onCreateRoom }: CreateRoomModalProps)
               type="submit"
               className="flex-1 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg transition-colors"
             >
-              Create Room
+              {isEditing ? 'Update Room' : 'Create Room'}
             </button>
           </div>
         </form>

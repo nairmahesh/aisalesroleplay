@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Clock, Search, Info, Share2 } from 'lucide-react';
+import { Plus, Clock, Search, Info, Share2, Edit2, Trash2, MoreVertical } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { CreateRoomModal, RoomFormData } from '../components/CreateRoomModal';
 import { ShareInviteModal } from '../components/ShareInviteModal';
@@ -27,6 +27,8 @@ export function HumanToHumanView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [shareRoom, setShareRoom] = useState<{ token: string; name: string } | null>(null);
+  const [editingRoom, setEditingRoom] = useState<PracticeRoom | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRooms();
@@ -39,8 +41,12 @@ export function HumanToHumanView() {
       })
       .subscribe();
 
+    const handleClickOutside = () => setOpenMenuId(null);
+    document.addEventListener('click', handleClickOutside);
+
     return () => {
       supabase.removeChannel(channel);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, []);
 
@@ -122,6 +128,63 @@ export function HumanToHumanView() {
     } catch (error: any) {
       console.error('Error creating room:', error);
       alert(`Failed to create room: ${error?.message || error}`);
+    }
+  }
+
+  async function updateRoom(formData: RoomFormData) {
+    if (!editingRoom) return;
+
+    try {
+      const { error } = await supabase
+        .from('practice_rooms')
+        .update({
+          name: formData.name,
+          rep_name: formData.rep_name,
+          client_name: formData.client_name,
+          client_company: formData.client_company,
+          client_designation: formData.client_designation,
+          company_description: formData.company_description,
+          call_objective: formData.call_objective,
+          call_cta: formData.call_cta,
+        })
+        .eq('id', editingRoom.id);
+
+      if (error) {
+        console.error('Supabase error:', error);
+        alert(`Failed to update room: ${error.message}`);
+        throw error;
+      }
+
+      setEditingRoom(null);
+      await fetchRooms();
+    } catch (error: any) {
+      console.error('Error updating room:', error);
+      alert(`Failed to update room: ${error?.message || error}`);
+    }
+  }
+
+  async function deleteRoom(roomId: string, roomName: string) {
+    if (!confirm(`Are you sure you want to delete "${roomName}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('practice_rooms')
+        .delete()
+        .eq('id', roomId);
+
+      if (error) {
+        console.error('Supabase error:', error);
+        alert(`Failed to delete room: ${error.message}`);
+        throw error;
+      }
+
+      setOpenMenuId(null);
+      await fetchRooms();
+    } catch (error: any) {
+      console.error('Error deleting room:', error);
+      alert(`Failed to delete room: ${error?.message || error}`);
     }
   }
 
@@ -249,7 +312,7 @@ export function HumanToHumanView() {
         {filteredRooms.map((room) => (
           <div
             key={room.id}
-            className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow"
+            className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow relative"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 pr-2">
@@ -264,17 +327,57 @@ export function HumanToHumanView() {
                   </div>
                 )}
               </div>
-              <span
-                className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                  room.status === 'waiting'
-                    ? 'bg-yellow-100 text-yellow-700'
-                    : room.status === 'active'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-slate-100 text-slate-700'
-                }`}
-              >
-                {room.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
+                    room.status === 'waiting'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : room.status === 'active'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {room.status}
+                </span>
+                {room.status === 'waiting' && (
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setOpenMenuId(openMenuId === room.id ? null : room.id);
+                      }}
+                      className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                    >
+                      <MoreVertical className="w-4 h-4 text-slate-600" />
+                    </button>
+                    {openMenuId === room.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 min-w-[140px]">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingRoom(room);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors rounded-t-lg"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRoom(room.id, room.name);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors rounded-b-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {room.rep_name && room.client_name && (
@@ -326,6 +429,25 @@ export function HumanToHumanView() {
         <CreateRoomModal
           onClose={() => setShowCreateModal(false)}
           onCreateRoom={createRoom}
+        />
+      )}
+
+      {editingRoom && (
+        <CreateRoomModal
+          onClose={() => setEditingRoom(null)}
+          onCreateRoom={updateRoom}
+          initialData={{
+            name: editingRoom.name,
+            rep_name: editingRoom.rep_name,
+            client_name: editingRoom.client_name,
+            client_company: editingRoom.client_company,
+            client_designation: '',
+            company_description: '',
+            call_objective: '',
+            call_cta: '',
+            allow_external: editingRoom.allow_external,
+          }}
+          isEditing={true}
         />
       )}
 
