@@ -1,13 +1,40 @@
 # Setup Instructions
 
-## Database Migration Required
+## Prerequisites
 
-To enable room creation and external sharing features, you need to apply a database migration that updates the Row Level Security (RLS) policies.
+1. Node.js 18+ installed
+2. Supabase account and project
+3. API keys for AI providers (optional for initial setup)
 
-### Option 1: Using Supabase Dashboard (Recommended)
+## Installation Steps
+
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_SUPABASE_URL=your-supabase-url
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
+
+Get these values from your Supabase project dashboard:
+- Go to Project Settings → API
+- Copy the Project URL and anon/public key
+
+### 3. Database Setup - Apply AI Provider Migration
+
+**IMPORTANT:** Apply the new migration for AI provider settings.
+
+#### Using Supabase Dashboard (Recommended)
 
 1. Go to your Supabase Dashboard: https://supabase.com/dashboard
-2. Navigate to your project: `kxhzkudsutyezstrqxbd`
+2. Navigate to your project
 3. Go to **SQL Editor**
 4. Copy and paste the following SQL:
 

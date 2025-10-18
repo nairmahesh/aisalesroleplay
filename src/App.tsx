@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AuthProvider } from './contexts/AuthContext';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -8,10 +8,16 @@ import { HumanToHumanView } from './views/HumanToHumanView';
 import { CallHistoryView } from './views/CallHistoryView';
 import { ManageBotsView } from './views/ManageBotsView';
 import { SettingsView } from './views/SettingsView';
+import { AIProviderSettingsView } from './views/AIProviderSettingsView';
+import { aiProviderService } from './modules/ai-providers';
 
 function App() {
   console.log('App component rendering');
   const [activeView, setActiveView] = useState('dashboard');
+
+  useEffect(() => {
+    aiProviderService.initializeProviders();
+  }, []);
 
   const renderView = () => {
     try {
@@ -29,6 +35,8 @@ function App() {
           return <ManageBotsView />;
         case 'settings':
           return <SettingsView />;
+        case 'ai-settings':
+          return <AIProviderSettingsView />;
         default:
           return <DashboardView />;
       }
