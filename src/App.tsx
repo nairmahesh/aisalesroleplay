@@ -10,6 +10,7 @@ import { ManageBotsView } from './views/ManageBotsView';
 import { SettingsView } from './views/SettingsView';
 import { AIProviderSettingsView } from './views/AIProviderSettingsView';
 import { AdminView } from './views/AdminView';
+import { PricingAnalysisView } from './views/PricingAnalysisView';
 import { aiProviderService } from './modules/ai-providers';
 
 function App() {
@@ -40,6 +41,8 @@ function App() {
           return <AIProviderSettingsView />;
         case 'admin':
           return <AdminView />;
+        case 'pricing':
+          return <PricingAnalysisView />;
         default:
           return <DashboardView />;
       }

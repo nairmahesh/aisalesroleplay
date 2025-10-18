@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, MessageSquare, FileText, Settings, ChevronDown, ChevronRight, Bot, UsersRound, Cpu, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, MessageSquare, FileText, Settings, ChevronDown, ChevronRight, Bot, UsersRound, Cpu, Shield, DollarSign } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useState } from 'react';
 
@@ -16,6 +16,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
     { id: 'history', label: 'Call History', icon: FileText, roles: ['sales_rep', 'manager', 'admin'] },
     { id: 'manage-bots', label: 'Manage Bots', icon: Users, roles: ['manager', 'admin'] },
     { id: 'admin', label: 'Admin', icon: Shield, roles: ['admin'] },
+    { id: 'pricing', label: 'Pricing Analysis', icon: DollarSign, roles: ['admin'] },
     { id: 'ai-settings', label: 'AI Providers', icon: Cpu, roles: ['admin'] },
     { id: 'settings', label: 'Settings', icon: Settings, roles: ['admin'] },
   ];
