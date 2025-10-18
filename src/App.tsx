@@ -9,6 +9,7 @@ import { CallHistoryView } from './views/CallHistoryView';
 import { ManageBotsView } from './views/ManageBotsView';
 import { SettingsView } from './views/SettingsView';
 import { AIProviderSettingsView } from './views/AIProviderSettingsView';
+import { AdminView } from './views/AdminView';
 import { aiProviderService } from './modules/ai-providers';
 
 function App() {
@@ -37,6 +38,8 @@ function App() {
           return <SettingsView />;
         case 'ai-settings':
           return <AIProviderSettingsView />;
+        case 'admin':
+          return <AdminView />;
         default:
           return <DashboardView />;
       }
