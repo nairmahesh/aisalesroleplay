@@ -82,11 +82,11 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     if (practiceMode === 'ai_roleplay') {
       setTimeout(() => {
         const greetings = {
-          friendly: `Hi there! ${bot.name} speaking. Thanks so much for reaching out! How can I help you today?`,
-          professional: `Hello, this is ${bot.name} from ${bot.company}. Thank you for calling. How may I assist you?`,
-          skeptical: `${bot.name} here. I've got a few minutes. What's this about?`,
-          analytical: `Good morning, ${bot.name} speaking. I understand you'd like to discuss something. What can I help you with?`,
-          enthusiastic: `Hey! ${bot.name} here! So glad you called. What can I do for you today?`,
+          friendly: `Hello?`,
+          professional: `Hello?`,
+          skeptical: `Yeah?`,
+          analytical: `Hello, this is ${bot.name}.`,
+          enthusiastic: `Hello!`,
         };
 
         const greeting = greetings[bot.personality as keyof typeof greetings] || greetings.professional;
