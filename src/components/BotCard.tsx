@@ -41,6 +41,10 @@ export function BotCard({ bot, onViewDetails, onStartCall }: BotCardProps) {
           </span>
         </div>
 
+        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+          {bot.brief_profile}
+        </p>
+
         <div className="space-y-2">
           <button
             onClick={() => onViewDetails(bot)}
