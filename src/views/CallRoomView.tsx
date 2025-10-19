@@ -25,9 +25,11 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [transcript, setTranscript] = useState<Message[]>([]);
   const [callDuration, setCallDuration] = useState(0);
-  const [isListening] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [callId, setCallId] = useState<string | null>(null);
   const [callStartTime, setCallStartTime] = useState<Date | null>(null);
+  const [recognition, setRecognition] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -46,7 +48,74 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
         window.speechSynthesis.getVoices();
       };
     }
+
+    // Initialize Speech Recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = getLanguageCode(bot.language);
+
+      recognitionInstance.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognitionInstance.onresult = (event: any) => {
+        let finalTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript && !isProcessing) {
+          handleUserSpeech(finalTranscript);
+        }
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+        if (isCallActive && !isMuted) {
+          recognitionInstance.start();
+        }
+      };
+
+      setRecognition(recognitionInstance);
+    }
+
+    return () => {
+      if (recognition) {
+        recognition.stop();
+      }
+    };
   }, []);
+
+  const getLanguageCode = (language: string): string => {
+    const languageMap: Record<string, string> = {
+      'English': 'en-US',
+      'Spanish': 'es-ES',
+      'French': 'fr-FR',
+      'German': 'de-DE',
+      'Italian': 'it-IT',
+      'Portuguese': 'pt-BR',
+      'Arabic': 'ar-SA',
+      'Hindi': 'hi-IN',
+      'Tamil': 'ta-IN',
+      'Marathi': 'mr-IN',
+      'Gujarati': 'gu-IN',
+      'Malayalam': 'ml-IN',
+      'Swahili': 'sw-KE',
+    };
+    return languageMap[language] || 'en-US';
+  };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -78,6 +147,15 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       setCallId(newCall.id);
     }
 
+    // Start speech recognition
+    if (recognition && practiceMode === 'ai_roleplay') {
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+      }
+    }
+
     // Only AI bot responds automatically
     if (practiceMode === 'ai_roleplay') {
       setTimeout(() => {
@@ -87,9 +165,10 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
           skeptical: `Yeah?`,
           analytical: `Hello, this is ${bot.name}.`,
           enthusiastic: `Hello!`,
+          rude: `What?`,
         };
 
-        const greeting = greetings[bot.personality as keyof typeof greetings] || greetings.professional;
+        const greeting = greetings[bot.personality.toLowerCase() as keyof typeof greetings] || greetings.professional;
         addMessage('bot', greeting, 'neutral');
       }, 800);
     }
@@ -100,6 +179,11 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
 
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+    }
+
+    if (recognition) {
+      recognition.stop();
+      setIsListening(false);
     }
 
     // Save call data to database
@@ -173,21 +257,57 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   const speakMessage = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
+
+      // Configure voice characteristics based on personality
+      const personalityConfig = {
+        friendly: { rate: 1.0, pitch: 1.1, volume: 1.0 },
+        professional: { rate: 0.95, pitch: 1.0, volume: 1.0 },
+        skeptical: { rate: 0.9, pitch: 0.9, volume: 0.9 },
+        analytical: { rate: 0.85, pitch: 0.95, volume: 1.0 },
+        enthusiastic: { rate: 1.1, pitch: 1.2, volume: 1.0 },
+        rude: { rate: 1.0, pitch: 0.85, volume: 1.0 },
+      };
+
+      const config = personalityConfig[bot.personality.toLowerCase() as keyof typeof personalityConfig] || personalityConfig.professional;
+      utterance.rate = config.rate;
+      utterance.pitch = config.pitch;
+      utterance.volume = config.volume;
 
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(voice =>
-        voice.name.includes('Google US English') ||
-        voice.name.includes('Microsoft') ||
-        voice.lang.startsWith('en')
-      );
+      const langCode = getLanguageCode(bot.language);
+
+      // Find voice matching bot's language and gender preference
+      let preferredVoice = voices.find(voice => {
+        const matchesLanguage = voice.lang.startsWith(langCode.split('-')[0]);
+        const isMale = bot.name.includes('Ahmed') || bot.name.includes('Karthik') || bot.name.includes('Aditya') || bot.name.includes('Rahul');
+        const voiceGender = voice.name.toLowerCase().includes('male') ? 'male' : voice.name.toLowerCase().includes('female') ? 'female' : null;
+
+        if (matchesLanguage) {
+          if (voiceGender === null) return true;
+          return isMale ? voiceGender === 'male' : voiceGender === 'female';
+        }
+        return false;
+      });
+
+      // Fallback to any voice in the language
+      if (!preferredVoice) {
+        preferredVoice = voices.find(voice => voice.lang.startsWith(langCode.split('-')[0]));
+      }
+
+      // Final fallback to English
+      if (!preferredVoice) {
+        preferredVoice = voices.find(voice =>
+          voice.name.includes('Google') ||
+          voice.name.includes('Microsoft') ||
+          voice.lang.startsWith('en')
+        );
+      }
 
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       }
 
+      utterance.lang = langCode;
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -207,6 +327,74 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     }
   };
 
+  const handleUserSpeech = async (speechText: string) => {
+    setIsProcessing(true);
+    addMessage('user', speechText, 'neutral');
+
+    // Generate AI response based on personality
+    setTimeout(() => {
+      const response = generateBotResponse(speechText, bot.personality);
+      addMessage('bot', response, 'neutral');
+      setIsProcessing(false);
+    }, 1500);
+  };
+
+  const generateBotResponse = (userInput: string, personality: string): string => {
+    const input = userInput.toLowerCase();
+
+    // Personality-based response templates
+    const responses: Record<string, Record<string, string>> = {
+      friendly: {
+        greeting: "Hi there! It's great to connect with you. How can I help you today?",
+        pricing: "I'd love to discuss our pricing! It's very flexible and designed to fit different needs. What's your budget range?",
+        objection: "I totally understand your concern. Let me share how we've helped others in similar situations.",
+        default: "That's a great point! Tell me more about what you're thinking.",
+      },
+      professional: {
+        greeting: "Hello. Thank you for reaching out. How may I assist you?",
+        pricing: "I can provide detailed pricing information. Our structure is transparent and based on your specific requirements.",
+        objection: "I appreciate you bringing that up. Let me address that concern directly.",
+        default: "I see. Could you elaborate on that?",
+      },
+      skeptical: {
+        greeting: "Yeah? What is this about?",
+        pricing: "Look, I've heard a lot of pitches. What makes yours different?",
+        objection: "I've heard that before. Prove it.",
+        default: "Uh-huh. Go on.",
+      },
+      analytical: {
+        greeting: "Hello, this is ${bot.name}. I prefer data-driven conversations. What metrics matter to you?",
+        pricing: "Let's discuss ROI and concrete numbers. What KPIs are you tracking?",
+        objection: "Interesting point. Do you have data to support that concern?",
+        default: "Could you provide more specific details or data points?",
+      },
+      enthusiastic: {
+        greeting: "Hi! This is exciting! What can I help you with?",
+        pricing: "Oh, I love talking about our solutions! The value we provide is amazing. What's your biggest challenge?",
+        objection: "I'm so glad you asked! Let me show you why this works so well!",
+        default: "Yes! That's exactly what we help with! Tell me more!",
+      },
+      rude: {
+        greeting: "What? Make it quick.",
+        pricing: "You're calling ME about pricing? Why should I care?",
+        objection: "Yeah, yeah. Everyone says that. You got anything new?",
+        default: "So?",
+      },
+    };
+
+    const personalityResponses = responses[personality.toLowerCase()] || responses.professional;
+
+    if (input.includes('hi') || input.includes('hello') || input.includes('hey')) {
+      return personalityResponses.greeting;
+    } else if (input.includes('price') || input.includes('cost') || input.includes('pricing')) {
+      return personalityResponses.pricing;
+    } else if (input.includes('concern') || input.includes('worried') || input.includes('not sure')) {
+      return personalityResponses.objection;
+    } else {
+      return personalityResponses.default;
+    }
+  };
+
   const simulateUserMessage = () => {
     const userMessages = [
       "Hi! I wanted to discuss your solutions for our team.",
@@ -215,20 +403,9 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       "How long does implementation typically take?",
       "Do you have any case studies in our industry?",
     ];
-    const botResponses = [
-      "Absolutely! I'd be happy to walk you through our solutions. What specific challenges is your team facing right now?",
-      "Great question! Our pricing is flexible and scales with your team size. Can you share how many users you're looking to support?",
-      "Based on similar clients in your industry, we typically see a 3-4x ROI within the first 6 months. What metrics are most important to you?",
-      "Implementation usually takes 2-4 weeks depending on your setup. We provide dedicated support throughout. Do you have any specific integration requirements?",
-      "Yes, we work with several companies in your space. I can share some relevant case studies. What outcomes are you most interested in seeing?",
-    ];
 
     const randomIndex = Math.floor(Math.random() * userMessages.length);
-    addMessage('user', userMessages[randomIndex], 'positive');
-
-    setTimeout(() => {
-      addMessage('bot', botResponses[randomIndex], 'neutral');
-    }, 2000);
+    handleUserSpeech(userMessages[randomIndex]);
   };
 
   return (
@@ -301,7 +478,17 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
                 <div className="space-y-6">
                   <div className="flex items-center justify-center gap-6">
                     <button
-                      onClick={() => setIsMuted(!isMuted)}
+                      onClick={() => {
+                        const newMutedState = !isMuted;
+                        setIsMuted(newMutedState);
+                        if (recognition) {
+                          if (newMutedState) {
+                            recognition.stop();
+                          } else {
+                            recognition.start();
+                          }
+                        }
+                      }}
                       className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
                         isMuted
                           ? 'bg-red-500 hover:bg-red-600'
@@ -335,13 +522,19 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
 
                   {practiceMode === 'ai_roleplay' && (
                     <div className="text-center">
+                      {isListening && (
+                        <div className="flex items-center justify-center gap-2 mb-3">
+                          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                          <span className="text-sm text-red-400 font-medium">Listening...</span>
+                        </div>
+                      )}
                       <button
                         onClick={simulateUserMessage}
                         className="px-6 py-3 bg-cyan-500 hover:bg-cyan-600 text-white font-medium rounded-lg transition-colors"
                       >
                         Simulate Speaking
                       </button>
-                      <p className="text-xs text-slate-400 mt-2">Demo: Click to add messages to transcript</p>
+                      <p className="text-xs text-slate-400 mt-2">Speak naturally or click to simulate</p>
                     </div>
                   )}
                   {practiceMode === 'self_practice' && (
@@ -351,12 +544,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
                     </div>
                   )}
 
-                  {isListening && (
-                    <div className="flex items-center justify-center gap-2 text-cyan-400">
-                      <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-                      <span className="text-sm font-medium">Listening...</span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
