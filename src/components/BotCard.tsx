@@ -29,21 +29,24 @@ export function BotCard({ bot, onViewDetails, onStartCall }: BotCardProps) {
           </div>
         </div>
 
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Persona</p>
+          <p className="text-sm font-medium text-slate-900">{bot.personality}</p>
+        </div>
+
+        <div className="mb-4">
+          <p className="text-xs font-semibold text-slate-500 uppercase mb-1">Language</p>
+          <p className="text-sm font-medium text-slate-900">{bot.language}</p>
+        </div>
+
         <div className="flex flex-wrap gap-2 mb-4">
-          <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
-            {bot.personality}
-          </span>
           <span className="px-3 py-1 bg-cyan-50 text-cyan-700 text-xs font-medium rounded-full">
             {bot.call_type}
           </span>
           <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-medium rounded-full">
-            {bot.language}
+            {bot.industry}
           </span>
         </div>
-
-        <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-          {bot.brief_profile}
-        </p>
 
         <div className="space-y-2">
           <button
