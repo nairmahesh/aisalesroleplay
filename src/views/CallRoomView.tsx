@@ -19,7 +19,7 @@ interface Message {
 }
 
 export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps) {
-  const { user } = useAuth();
+  const { currentUser } = useAuth();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
@@ -46,7 +46,7 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   };
 
   const startCall = async () => {
-    if (!user) return;
+    if (!currentUser) return;
 
     setCallStartTime(new Date());
     setIsCallActive(true);
@@ -56,7 +56,7 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       .from('calls')
       .insert({
         bot_id: bot.id,
-        user_id: user.id,
+        user_id: currentUser.id,
         status: 'in_progress',
         started_at: new Date().toISOString(),
         practice_mode: practiceMode,
