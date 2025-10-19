@@ -39,6 +39,15 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     return () => clearInterval(interval);
   }, [isCallActive]);
 
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }, []);
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -72,13 +81,26 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     // Only AI bot responds automatically
     if (practiceMode === 'ai_roleplay') {
       setTimeout(() => {
-        addMessage('bot', "Hello! This is " + bot.name + ". Thanks for reaching out. How can I help you today?", 'neutral');
-      }, 1500);
+        const greetings = {
+          friendly: `Hi there! ${bot.name} speaking. Thanks so much for reaching out! How can I help you today?`,
+          professional: `Hello, this is ${bot.name} from ${bot.company}. Thank you for calling. How may I assist you?`,
+          skeptical: `${bot.name} here. I've got a few minutes. What's this about?`,
+          analytical: `Good morning, ${bot.name} speaking. I understand you'd like to discuss something. What can I help you with?`,
+          enthusiastic: `Hey! ${bot.name} here! So glad you called. What can I do for you today?`,
+        };
+
+        const greeting = greetings[bot.personality as keyof typeof greetings] || greetings.professional;
+        addMessage('bot', greeting, 'neutral');
+      }, 800);
     }
   };
 
   const endCall = async () => {
     setIsCallActive(false);
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
     // Save call data to database
     if (callId && callStartTime) {
@@ -148,6 +170,28 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     }, 500);
   };
 
+  const speakMessage = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find(voice =>
+        voice.name.includes('Google US English') ||
+        voice.name.includes('Microsoft') ||
+        voice.lang.startsWith('en')
+      );
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
   const addMessage = (speaker: 'user' | 'bot', message: string, sentiment: 'positive' | 'neutral' | 'negative' = 'neutral') => {
     const newMessage: Message = {
       id: Date.now().toString(),
@@ -157,6 +201,10 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       sentiment,
     };
     setTranscript(prev => [...prev, newMessage]);
+
+    if (speaker === 'bot' && isSpeakerOn) {
+      speakMessage(message);
+    }
   };
 
   const simulateUserMessage = () => {
