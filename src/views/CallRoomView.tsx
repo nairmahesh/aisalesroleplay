@@ -31,73 +31,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   const [recognition, setRecognition] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isCallActive) {
-      interval = setInterval(() => {
-        setCallDuration(prev => prev + 1);
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [isCallActive]);
-
-  useEffect(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
-    }
-
-    // Initialize Speech Recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
-      recognitionInstance.continuous = true;
-      recognitionInstance.interimResults = true;
-      recognitionInstance.lang = getLanguageCode(bot.language);
-
-      recognitionInstance.onstart = () => {
-        setIsListening(true);
-      };
-
-      recognitionInstance.onresult = (event: any) => {
-        let finalTranscript = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          }
-        }
-
-        if (finalTranscript && !isProcessing) {
-          handleUserSpeech(finalTranscript);
-        }
-      };
-
-      recognitionInstance.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-
-      recognitionInstance.onend = () => {
-        setIsListening(false);
-        if (isCallActive && !isMuted) {
-          recognitionInstance.start();
-        }
-      };
-
-      setRecognition(recognitionInstance);
-    }
-
-    return () => {
-      if (recognition) {
-        recognition.stop();
-      }
-    };
-  }, []);
-
   const getLanguageCode = (language: string): string => {
     const languageMap: Record<string, string> = {
       'English': 'en-US',
@@ -116,6 +49,168 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     };
     return languageMap[language] || 'en-US';
   };
+
+  const handleUserSpeech = async (speechText: string) => {
+    if (!speechText.trim()) return;
+
+    setIsProcessing(true);
+    console.log('User said:', speechText);
+    addMessage('user', speechText, 'neutral');
+
+    setTimeout(() => {
+      const response = generateBotResponse(speechText, bot.personality);
+      addMessage('bot', response, 'neutral');
+      setIsProcessing(false);
+    }, 1500);
+  };
+
+  const generateBotResponse = (userInput: string, personality: string): string => {
+    const input = userInput.toLowerCase();
+
+    const responses: Record<string, Record<string, string>> = {
+      friendly: {
+        greeting: "Hi there! It's great to connect with you. How can I help you today?",
+        pricing: "I'd love to discuss our pricing! It's very flexible and designed to fit different needs. What's your budget range?",
+        objection: "I totally understand your concern. Let me share how we've helped others in similar situations.",
+        default: "That's a great point! Tell me more about what you're thinking.",
+      },
+      professional: {
+        greeting: "Hello. Thank you for reaching out. How may I assist you?",
+        pricing: "I can provide detailed pricing information. Our structure is transparent and based on your specific requirements.",
+        objection: "I appreciate you bringing that up. Let me address that concern directly.",
+        default: "I see. Could you elaborate on that?",
+      },
+      skeptical: {
+        greeting: "Yeah? What is this about?",
+        pricing: "Look, I've heard a lot of pitches. What makes yours different?",
+        objection: "I've heard that before. Prove it.",
+        default: "Uh-huh. Go on.",
+      },
+      analytical: {
+        greeting: `Hello, this is ${bot.name}. I prefer data-driven conversations. What metrics matter to you?`,
+        pricing: "Let's discuss ROI and concrete numbers. What KPIs are you tracking?",
+        objection: "Interesting point. Do you have data to support that concern?",
+        default: "Could you provide more specific details or data points?",
+      },
+      enthusiastic: {
+        greeting: "Hi! This is exciting! What can I help you with?",
+        pricing: "Oh, I love talking about our solutions! The value we provide is amazing. What's your biggest challenge?",
+        objection: "I'm so glad you asked! Let me show you why this works so well!",
+        default: "Yes! That's exactly what we help with! Tell me more!",
+      },
+      rude: {
+        greeting: "What? Make it quick.",
+        pricing: "You're calling ME about pricing? Why should I care?",
+        objection: "Yeah, yeah. Everyone says that. You got anything new?",
+        default: "So?",
+      },
+    };
+
+    const personalityResponses = responses[personality.toLowerCase()] || responses.professional;
+
+    if (input.includes('hi') || input.includes('hello') || input.includes('hey') || input.includes('നമസ്കാരം') || input.includes('ഹലോ')) {
+      return personalityResponses.greeting;
+    } else if (input.includes('price') || input.includes('cost') || input.includes('pricing') || input.includes('വില')) {
+      return personalityResponses.pricing;
+    } else if (input.includes('concern') || input.includes('worried') || input.includes('not sure')) {
+      return personalityResponses.objection;
+    } else {
+      return personalityResponses.default;
+    }
+  };
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isCallActive) {
+      interval = setInterval(() => {
+        setCallDuration(prev => prev + 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isCallActive]);
+
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      const langCode = getLanguageCode(bot.language);
+
+      console.log('Initializing speech recognition for:', bot.language, 'Code:', langCode);
+
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = langCode;
+      recognitionInstance.maxAlternatives = 3;
+
+      recognitionInstance.onstart = () => {
+        console.log('Speech recognition started');
+        setIsListening(true);
+      };
+
+      recognitionInstance.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        if (finalTranscript && !isProcessing) {
+          console.log('Final transcript:', finalTranscript);
+          handleUserSpeech(finalTranscript);
+        }
+      };
+
+      recognitionInstance.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'no-speech') {
+          console.log('No speech detected, continuing to listen...');
+        } else if (event.error === 'not-allowed') {
+          alert('Microphone access is required. Please allow microphone access and try again.');
+        }
+        setIsListening(false);
+      };
+
+      recognitionInstance.onend = () => {
+        console.log('Speech recognition ended');
+        setIsListening(false);
+        if (isCallActive && !isMuted) {
+          try {
+            recognitionInstance.start();
+          } catch (e) {
+            console.error('Error restarting recognition:', e);
+          }
+        }
+      };
+
+      setRecognition(recognitionInstance);
+    } else {
+      console.error('Speech recognition not supported in this browser');
+      alert('Speech recognition is not supported in your browser. Please use Chrome, Edge, or Safari.');
+    }
+
+    return () => {
+      if (recognition) {
+        try {
+          recognition.stop();
+        } catch (e) {
+          console.error('Error stopping recognition:', e);
+        }
+      }
+    };
+  }, [bot.language]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -324,74 +419,6 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
 
     if (speaker === 'bot' && isSpeakerOn) {
       speakMessage(message);
-    }
-  };
-
-  const handleUserSpeech = async (speechText: string) => {
-    setIsProcessing(true);
-    addMessage('user', speechText, 'neutral');
-
-    // Generate AI response based on personality
-    setTimeout(() => {
-      const response = generateBotResponse(speechText, bot.personality);
-      addMessage('bot', response, 'neutral');
-      setIsProcessing(false);
-    }, 1500);
-  };
-
-  const generateBotResponse = (userInput: string, personality: string): string => {
-    const input = userInput.toLowerCase();
-
-    // Personality-based response templates
-    const responses: Record<string, Record<string, string>> = {
-      friendly: {
-        greeting: "Hi there! It's great to connect with you. How can I help you today?",
-        pricing: "I'd love to discuss our pricing! It's very flexible and designed to fit different needs. What's your budget range?",
-        objection: "I totally understand your concern. Let me share how we've helped others in similar situations.",
-        default: "That's a great point! Tell me more about what you're thinking.",
-      },
-      professional: {
-        greeting: "Hello. Thank you for reaching out. How may I assist you?",
-        pricing: "I can provide detailed pricing information. Our structure is transparent and based on your specific requirements.",
-        objection: "I appreciate you bringing that up. Let me address that concern directly.",
-        default: "I see. Could you elaborate on that?",
-      },
-      skeptical: {
-        greeting: "Yeah? What is this about?",
-        pricing: "Look, I've heard a lot of pitches. What makes yours different?",
-        objection: "I've heard that before. Prove it.",
-        default: "Uh-huh. Go on.",
-      },
-      analytical: {
-        greeting: "Hello, this is ${bot.name}. I prefer data-driven conversations. What metrics matter to you?",
-        pricing: "Let's discuss ROI and concrete numbers. What KPIs are you tracking?",
-        objection: "Interesting point. Do you have data to support that concern?",
-        default: "Could you provide more specific details or data points?",
-      },
-      enthusiastic: {
-        greeting: "Hi! This is exciting! What can I help you with?",
-        pricing: "Oh, I love talking about our solutions! The value we provide is amazing. What's your biggest challenge?",
-        objection: "I'm so glad you asked! Let me show you why this works so well!",
-        default: "Yes! That's exactly what we help with! Tell me more!",
-      },
-      rude: {
-        greeting: "What? Make it quick.",
-        pricing: "You're calling ME about pricing? Why should I care?",
-        objection: "Yeah, yeah. Everyone says that. You got anything new?",
-        default: "So?",
-      },
-    };
-
-    const personalityResponses = responses[personality.toLowerCase()] || responses.professional;
-
-    if (input.includes('hi') || input.includes('hello') || input.includes('hey')) {
-      return personalityResponses.greeting;
-    } else if (input.includes('price') || input.includes('cost') || input.includes('pricing')) {
-      return personalityResponses.pricing;
-    } else if (input.includes('concern') || input.includes('worried') || input.includes('not sure')) {
-      return personalityResponses.objection;
-    } else {
-      return personalityResponses.default;
     }
   };
 
