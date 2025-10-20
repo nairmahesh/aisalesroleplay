@@ -436,9 +436,13 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   };
 
   const speakMessage = (text: string) => {
-    if (!isCallActive) return;
+    if (!isCallActive) {
+      console.log('Not speaking - call not active');
+      return;
+    }
 
     if ('speechSynthesis' in window) {
+      console.log('Speaking:', text);
       const utterance = new SpeechSynthesisUtterance(text);
 
       // Configure voice characteristics based on personality - smoother settings
@@ -523,7 +527,10 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     setTranscript(prev => [...prev, newMessage]);
 
     if (speaker === 'bot' && isSpeakerOn && isCallActive) {
+      console.log('Calling speakMessage - isSpeakerOn:', isSpeakerOn, 'isCallActive:', isCallActive);
       speakMessage(message);
+    } else if (speaker === 'bot') {
+      console.log('Not speaking - isSpeakerOn:', isSpeakerOn, 'isCallActive:', isCallActive);
     }
   };
 
