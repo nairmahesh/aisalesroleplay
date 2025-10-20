@@ -64,10 +64,47 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     }, 1500);
   };
 
-  const generateBotResponse = (userInput: string, personality: string): string => {
-    const input = userInput.toLowerCase();
+  const getLocalizedResponses = (language: string, personality: string) => {
+    const malayalamResponses = {
+      friendly: {
+        greeting: "നമസ്കാരം! നിങ്ങളുമായി ബന്ധപ്പെടാൻ സന്തോഷം. ഞാൻ എങ്ങനെ സഹായിക്കും?",
+        pricing: "വില ചർച്ച ചെയ്യാൻ ഞാൻ ആഗ്രഹിക്കുന്നു! അത് വളരെ അനുയോജ്യമാണ്. നിങ്ങളുടെ ബജറ്റ് എന്താണ്?",
+        objection: "ഞാൻ മനസ്സിലാക്കുന്നു. സമാന സാഹചര്യങ്ങളിൽ ഞങ്ങൾ എങ്ങനെ സഹായിച്ചുവെന്ന് പറയട്ടെ.",
+        default: "നല്ല കാര്യം! കൂടുതൽ പറയൂ.",
+      },
+      professional: {
+        greeting: "നമസ്കാരം. ബന്ധപ്പെട്ടതിന് നന്ദി. ഞാൻ എങ്ങനെ സഹായിക്കും?",
+        pricing: "വിശദമായ വില വിവരങ്ങൾ നൽകാം. നിങ്ങളുടെ ആവശ്യങ്ങൾ അടിസ്ഥാനമാക്കിയാണ് ഞങ്ങളുടെ ഘടന.",
+        objection: "അത് ഉന്നയിച്ചതിന് നന്ദി. ആ ആശങ്ക നേരിട്ട് അഭിസംബോധന ചെയ്യാം.",
+        default: "മനസ്സിലായി. കൂടുതൽ വിശദീകരിക്കാമോ?",
+      },
+      skeptical: {
+        greeting: "എന്താണ്? ഇത് എന്തിനെക്കുറിച്ചാണ്?",
+        pricing: "നോക്കൂ, ഞാൻ ഒരുപാട് പിച്ചുകൾ കേട്ടിട്ടുണ്ട്. നിങ്ങളുടേത് എന്താണ് വ്യത്യസ്തം?",
+        objection: "ഞാൻ അത് മുമ്പ് കേട്ടിട്ടുണ്ട്. തെളിയിക്കൂ.",
+        default: "ശരി. തുടരൂ.",
+      },
+      analytical: {
+        greeting: "നമസ്കാരം. എനിക്ക് ഡാറ്റാ അടിസ്ഥാനമാക്കിയുള്ള സംഭാഷണങ്ങളാണ് ഇഷ്ടം. നിങ്ങൾക്ക് ഏതാണ് പ്രധാനം?",
+        pricing: "ROI, കൃത്യമായ സംഖ്യകൾ ചർച്ച ചെയ്യാം. നിങ്ങൾ എന്ത് KPIs ട്രാക്ക് ചെയ്യുന്നു?",
+        objection: "രസകരം. ആ ആശങ്കയെ പിന്തുണയ്ക്കാൻ ഡാറ്റ ഉണ്ടോ?",
+        default: "കൂടുതൽ വിശദാംശങ്ങൾ നൽകാമോ?",
+      },
+      enthusiastic: {
+        greeting: "ഹലോ! ഇത് ആവേശകരമാണ്! ഞാൻ എങ്ങനെ സഹായിക്കും?",
+        pricing: "ഓ, ഞങ്ങളുടെ പരിഹാരങ്ങളെക്കുറിച്ച് സംസാരിക്കാൻ ഞാൻ ഇഷ്ടപ്പെടുന്നു! നിങ്ങളുടെ വലിയ വെല്ലുവിളി എന്താണ്?",
+        objection: "നിങ്ങൾ ചോദിച്ചതിൽ ഞാൻ വളരെ സന്തോഷവാനാണ്! ഇത് എത്ര നന്നായി പ്രവർത്തിക്കുന്നുവെന്ന് കാണിക്കാം!",
+        default: "അതെ! അതിനെക്കുറിച്ചാണ് ഞങ്ങൾ സഹായിക്കുന്നത്! കൂടുതൽ പറയൂ!",
+      },
+      rude: {
+        greeting: "എന്താണ്? വേഗം പറയൂ.",
+        pricing: "നിങ്ങൾ എന്നെ വിളിക്കുന്നത് വിലയെക്കുറിച്ച്? എന്തിന് ഞാൻ താൽപ്പര്യപ്പെടണം?",
+        objection: "അതെ, അതെ. എല്ലാവരും അത് പറയുന്നു. പുതിയത് എന്തെങ്കിലും ഉണ്ടോ?",
+        default: "അപ്പോൾ?",
+      },
+    };
 
-    const responses: Record<string, Record<string, string>> = {
+    const englishResponses = {
       friendly: {
         greeting: "Hi there! It's great to connect with you. How can I help you today?",
         pricing: "I'd love to discuss our pricing! It's very flexible and designed to fit different needs. What's your budget range?",
@@ -87,7 +124,7 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
         default: "Uh-huh. Go on.",
       },
       analytical: {
-        greeting: `Hello, this is ${bot.name}. I prefer data-driven conversations. What metrics matter to you?`,
+        greeting: "Hello. I prefer data-driven conversations. What metrics matter to you?",
         pricing: "Let's discuss ROI and concrete numbers. What KPIs are you tracking?",
         objection: "Interesting point. Do you have data to support that concern?",
         default: "Could you provide more specific details or data points?",
@@ -106,7 +143,13 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       },
     };
 
-    const personalityResponses = responses[personality.toLowerCase()] || responses.professional;
+    const responseSet = language === 'Malayalam' ? malayalamResponses : englishResponses;
+    return responseSet[personality.toLowerCase() as keyof typeof responseSet] || responseSet.professional;
+  };
+
+  const generateBotResponse = (userInput: string, personality: string): string => {
+    const input = userInput.toLowerCase();
+    const personalityResponses = getLocalizedResponses(bot.language, personality);
 
     if (input.includes('hi') || input.includes('hello') || input.includes('hey') || input.includes('നമസ്കാരം') || input.includes('ഹലോ')) {
       return personalityResponses.greeting;
@@ -149,8 +192,11 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       recognitionInstance.lang = langCode;
       recognitionInstance.maxAlternatives = 3;
 
+      let isRecognitionActive = false;
+
       recognitionInstance.onstart = () => {
         console.log('Speech recognition started');
+        isRecognitionActive = true;
         setIsListening(true);
       };
 
@@ -175,23 +221,34 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
 
       recognitionInstance.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
+        isRecognitionActive = false;
         if (event.error === 'no-speech') {
           console.log('No speech detected, continuing to listen...');
         } else if (event.error === 'not-allowed') {
           alert('Microphone access is required. Please allow microphone access and try again.');
+        } else if (event.error === 'aborted') {
+          console.log('Speech recognition aborted');
         }
         setIsListening(false);
       };
 
       recognitionInstance.onend = () => {
-        console.log('Speech recognition ended');
+        console.log('Speech recognition ended, will restart:', isCallActive && !isMuted);
+        isRecognitionActive = false;
         setIsListening(false);
-        if (isCallActive && !isMuted) {
-          try {
-            recognitionInstance.start();
-          } catch (e) {
-            console.error('Error restarting recognition:', e);
-          }
+      };
+
+      // Store reference with restart logic
+      (recognitionInstance as any).restartIfNeeded = () => {
+        if (isCallActive && !isMuted && !isRecognitionActive) {
+          setTimeout(() => {
+            try {
+              console.log('Restarting speech recognition...');
+              recognitionInstance.start();
+            } catch (e) {
+              console.error('Error restarting recognition:', e);
+            }
+          }, 100);
         }
       };
 
@@ -211,6 +268,18 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       }
     };
   }, [bot.language]);
+
+  // Auto-restart recognition when it ends
+  useEffect(() => {
+    if (recognition && isCallActive && !isMuted && !isListening) {
+      const timer = setTimeout(() => {
+        if (recognition.restartIfNeeded) {
+          recognition.restartIfNeeded();
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [recognition, isCallActive, isMuted, isListening]);
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -242,19 +311,31 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       setCallId(newCall.id);
     }
 
-    // Start speech recognition
-    if (recognition && practiceMode === 'ai_roleplay') {
-      try {
-        recognition.start();
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-      }
+    // Start speech recognition after a short delay
+    if (recognition && practiceMode === 'ai_roleplay' && !isMuted) {
+      setTimeout(() => {
+        try {
+          console.log('Starting speech recognition...');
+          recognition.start();
+        } catch (error) {
+          console.error('Error starting speech recognition:', error);
+        }
+      }, 1000);
     }
 
     // Only AI bot responds automatically
     if (practiceMode === 'ai_roleplay') {
       setTimeout(() => {
-        const greetings = {
+        const malayalamGreetings = {
+          friendly: `ഹലോ?`,
+          professional: `നമസ്കാരം?`,
+          skeptical: `എന്താണ്?`,
+          analytical: `നമസ്കാരം, ഞാൻ ${bot.name}.`,
+          enthusiastic: `ഹലോ!`,
+          rude: `എന്ത്?`,
+        };
+
+        const englishGreetings = {
           friendly: `Hello?`,
           professional: `Hello?`,
           skeptical: `Yeah?`,
@@ -263,7 +344,8 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
           rude: `What?`,
         };
 
-        const greeting = greetings[bot.personality.toLowerCase() as keyof typeof greetings] || greetings.professional;
+        const greetingsSet = bot.language === 'Malayalam' ? malayalamGreetings : englishGreetings;
+        const greeting = greetingsSet[bot.personality.toLowerCase() as keyof typeof greetingsSet] || greetingsSet.professional;
         addMessage('bot', greeting, 'neutral');
       }, 800);
     }

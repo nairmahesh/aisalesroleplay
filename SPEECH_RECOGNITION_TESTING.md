@@ -8,6 +8,10 @@
 3. **Enhanced Logging**: Added console logs to help debug speech recognition
 4. **Malayalam Word Recognition**: Added Malayalam words to response triggers (നമസ്കാരം, ഹലോ, വില)
 5. **Better Error Handling**: Added specific error messages for microphone permission issues
+6. **Auto-restart Logic**: Speech recognition now automatically restarts when it ends during an active call
+7. **Multilingual Responses**: Bot now responds in Malayalam when speaking to Malayalam bots, English for English bots
+8. **Initial Greeting**: Bot greets in Malayalam ("നമസ്കാരം?") when calling Rahul Menon
+9. **Microphone State**: Mic starts unmuted by default, recognition starts automatically after call begins
 
 ### How to Test:
 
