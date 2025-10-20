@@ -456,12 +456,27 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
       // Find voice matching bot's language and gender preference
       let preferredVoice = voices.find(voice => {
         const matchesLanguage = voice.lang.startsWith(langCode.split('-')[0]);
-        const isMale = bot.name.includes('Ahmed') || bot.name.includes('Karthik') || bot.name.includes('Aditya') || bot.name.includes('Rahul');
-        const voiceGender = voice.name.toLowerCase().includes('male') ? 'male' : voice.name.toLowerCase().includes('female') ? 'female' : null;
+
+        // Detect bot gender based on name
+        const maleNames = ['Ahmed', 'Karthik', 'Aditya', 'Rahul'];
+        const femaleNames = ['Priya', 'Anjali', 'Sarah'];
+        const isMale = maleNames.some(name => bot.name.includes(name));
+        const isFemale = femaleNames.some(name => bot.name.includes(name));
+
+        // Detect voice gender
+        const voiceName = voice.name.toLowerCase();
+        let voiceGender: 'male' | 'female' | null = null;
+        if (voiceName.includes('female') || voiceName.includes('woman')) {
+          voiceGender = 'female';
+        } else if (voiceName.includes('male') || voiceName.includes('man')) {
+          voiceGender = 'male';
+        }
 
         if (matchesLanguage) {
           if (voiceGender === null) return true;
-          return isMale ? voiceGender === 'male' : voiceGender === 'female';
+          if (isFemale && voiceGender === 'female') return true;
+          if (isMale && voiceGender === 'male') return true;
+          if (!isMale && !isFemale) return true;
         }
         return false;
       });
