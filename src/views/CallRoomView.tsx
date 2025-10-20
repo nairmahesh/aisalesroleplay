@@ -359,7 +359,11 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     }
 
     if (recognition) {
-      recognition.stop();
+      try {
+        recognition.stop();
+      } catch (e) {
+        console.log('Recognition already stopped');
+      }
       setIsListening(false);
     }
 
@@ -432,17 +436,19 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   };
 
   const speakMessage = (text: string) => {
+    if (!isCallActive) return;
+
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
 
-      // Configure voice characteristics based on personality
+      // Configure voice characteristics based on personality - smoother settings
       const personalityConfig = {
-        friendly: { rate: 1.0, pitch: 1.1, volume: 1.0 },
-        professional: { rate: 0.95, pitch: 1.0, volume: 1.0 },
-        skeptical: { rate: 0.9, pitch: 0.9, volume: 0.9 },
-        analytical: { rate: 0.85, pitch: 0.95, volume: 1.0 },
-        enthusiastic: { rate: 1.1, pitch: 1.2, volume: 1.0 },
-        rude: { rate: 1.0, pitch: 0.85, volume: 1.0 },
+        friendly: { rate: 1.0, pitch: 1.15, volume: 1.0 },
+        professional: { rate: 0.95, pitch: 1.05, volume: 1.0 },
+        skeptical: { rate: 0.9, pitch: 0.95, volume: 0.95 },
+        analytical: { rate: 0.9, pitch: 1.0, volume: 1.0 },
+        enthusiastic: { rate: 1.05, pitch: 1.2, volume: 1.0 },
+        rude: { rate: 1.0, pitch: 0.9, volume: 1.0 },
       };
 
       const config = personalityConfig[bot.personality.toLowerCase() as keyof typeof personalityConfig] || personalityConfig.professional;
@@ -505,6 +511,8 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
   };
 
   const addMessage = (speaker: 'user' | 'bot', message: string, sentiment: 'positive' | 'neutral' | 'negative' = 'neutral') => {
+    if (!isCallActive) return;
+
     const newMessage: Message = {
       id: Date.now().toString(),
       speaker,
@@ -514,7 +522,7 @@ export function CallRoomView({ bot, practiceMode, onEndCall }: CallRoomViewProps
     };
     setTranscript(prev => [...prev, newMessage]);
 
-    if (speaker === 'bot' && isSpeakerOn) {
+    if (speaker === 'bot' && isSpeakerOn && isCallActive) {
       speakMessage(message);
     }
   };
